@@ -9,3 +9,5 @@ build/
 *.xccheckout
 *.xcscmblueprint
 
+# Local-only implementation planning docs
+/planning/
