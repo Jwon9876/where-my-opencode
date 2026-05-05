@@ -16,6 +16,7 @@
 		A10000000000000000000007 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* SettingsStore.swift */; };
 		A10000000000000000000008 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001B /* Project.swift */; };
 		A10000000000000000000009 /* ProjectScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* ProjectScanner.swift */; };
+		A1000000000000000000000A /* OpenCodeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001D /* OpenCodeLauncher.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		A1000000000000000000001A /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		A1000000000000000000001B /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
 		A1000000000000000000001C /* ProjectScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectScanner.swift; sourceTree = "<group>"; };
+		A1000000000000000000001D /* OpenCodeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeLauncher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +78,7 @@
 				A1000000000000000000001A /* SettingsStore.swift */,
 				A1000000000000000000001B /* Project.swift */,
 				A1000000000000000000001C /* ProjectScanner.swift */,
+				A1000000000000000000001D /* OpenCodeLauncher.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -166,6 +169,7 @@
 				A10000000000000000000007 /* SettingsStore.swift in Sources */,
 				A10000000000000000000008 /* Project.swift in Sources */,
 				A10000000000000000000009 /* ProjectScanner.swift in Sources */,
+				A1000000000000000000000A /* OpenCodeLauncher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

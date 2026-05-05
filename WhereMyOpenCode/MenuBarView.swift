@@ -6,9 +6,12 @@ struct MenuBarView: View {
 
     @State private var projects: [Project] = []
     @State private var scanErrorMessage: String?
+    @State private var launchStatusMessage: String?
+    @State private var launchStatusIsError = false
     @State private var visibleProjectLimit = Self.projectPageSize
 
     private static let projectPageSize = 5
+    private let openCodeLauncher = OpenCodeLauncher()
     private let projectScanner = ProjectScanner()
 
     var body: some View {
@@ -117,30 +120,44 @@ struct MenuBarView: View {
     }
 
     private func projectRow(_ project: Project) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "folder")
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(project.name)
-                    .lineLimit(1)
-
-                Text(modifiedDateText(for: project))
-                    .font(.caption)
+        Button {
+            launchOpenCode(for: project)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "folder")
                     .foregroundStyle(.secondary)
-            }
+                    .frame(width: 20)
 
-            Spacer()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(project.name)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Text(modifiedDateText(for: project))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-        .help(project.path)
+        .buttonStyle(.plain)
+        .help("Open \(project.name) in OpenCode\n\(project.path)")
     }
 
     private var footer: some View {
         VStack(spacing: 8) {
+            if let launchStatusMessage {
+                Text(launchStatusMessage)
+                    .font(.caption)
+                    .foregroundStyle(launchStatusIsError ? .red : .secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(2)
+            }
+
             HStack {
                 Button("Add Manual Project...") {
                 }
@@ -179,6 +196,17 @@ struct MenuBarView: View {
         }
 
         return project.modifiedDate.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private func launchOpenCode(for project: Project) {
+        do {
+            try openCodeLauncher.launch(project: project, settings: settingsStore.settings)
+            launchStatusMessage = "Opening \(project.name) in OpenCode."
+            launchStatusIsError = false
+        } catch {
+            launchStatusMessage = error.localizedDescription
+            launchStatusIsError = true
+        }
     }
 
     private func scanRootFolder() {

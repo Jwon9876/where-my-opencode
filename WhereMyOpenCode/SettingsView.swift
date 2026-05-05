@@ -4,6 +4,11 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var settingsStore: SettingsStore
 
+    @State private var opencodeStatusMessage: String?
+    @State private var opencodeStatusIsError = false
+
+    private let openCodeLauncher = OpenCodeLauncher()
+
     var body: some View {
         Form {
             Section("Root Folder") {
@@ -20,8 +25,14 @@ struct SettingsView: View {
                         chooseOpenCodeBinary()
                     }
                     Button("Test") {
+                        testOpenCodeConfiguration()
                     }
-                        .disabled(true)
+                }
+
+                if let opencodeStatusMessage {
+                    Text(opencodeStatusMessage)
+                        .font(.caption)
+                        .foregroundStyle(opencodeStatusIsError ? .red : .secondary)
                 }
             }
 
@@ -73,6 +84,17 @@ struct SettingsView: View {
 
         if panel.runModal() == .OK {
             settingsStore.setOpenCodePath(panel.url?.path)
+            opencodeStatusMessage = nil
+        }
+    }
+
+    private func testOpenCodeConfiguration() {
+        do {
+            opencodeStatusMessage = try openCodeLauncher.checkConfiguration(settings: settingsStore.settings)
+            opencodeStatusIsError = false
+        } catch {
+            opencodeStatusMessage = error.localizedDescription
+            opencodeStatusIsError = true
         }
     }
 }
