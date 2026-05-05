@@ -152,6 +152,97 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(reloadedStore.sessions(forProjectPath: appPath).map(\.id), ["latest-app", "old-app"])
     }
 
+    func testAppleScriptSupportEscapesStringLiterals() {
+        XCTAssertEqual(
+            AppleScriptSupport.stringLiteral("say \\ \"hello\""),
+            "\"say \\\\ \\\"hello\\\"\""
+        )
+    }
+
+    func testAppleTerminalSessionControllerSearchesMarkersByMostRecentSession() throws {
+        let oldSession = TrackedSession(
+            id: "old-session",
+            projectName: "App",
+            projectPath: "/tmp/App",
+            openedAt: Date(timeIntervalSince1970: 100),
+            terminalApp: .appleTerminal
+        )
+        let latestSession = TrackedSession(
+            id: "latest-session",
+            projectName: "App",
+            projectPath: "/tmp/App",
+            openedAt: Date(timeIntervalSince1970: 300),
+            terminalApp: .appleTerminal
+        )
+        var capturedScript = ""
+        let controller = AppleTerminalSessionController { source in
+            capturedScript = source
+
+            return """
+            found=true
+            marker=\(latestSession.marker)
+            terminalWindowID=7
+            terminalTabTTY=/dev/ttys007
+            terminalCustomTitle=\(latestSession.terminalTitle)
+            """
+        }
+
+        let result = try controller.focusFirstRunningSession(from: [oldSession, latestSession])
+
+        XCTAssertEqual(result?.sessionID, "latest-session")
+        XCTAssertEqual(result?.marker, latestSession.marker)
+        XCTAssertEqual(result?.terminalWindowID, 7)
+        XCTAssertEqual(result?.terminalTabTTY, "/dev/ttys007")
+        XCTAssertEqual(result?.terminalCustomTitle, latestSession.terminalTitle)
+        XCTAssertTrue(capturedScript.contains("if application \"Terminal\" is not running"))
+        XCTAssertTrue(capturedScript.contains("set selected tab of terminalWindow to terminalTab"))
+        XCTAssertTrue(capturedScript.contains("terminalCustomTitle begins with markerText"))
+
+        let latestMarkerRange = try XCTUnwrap(capturedScript.range(of: latestSession.marker))
+        let oldMarkerRange = try XCTUnwrap(capturedScript.range(of: oldSession.marker))
+        XCTAssertTrue(latestMarkerRange.lowerBound < oldMarkerRange.lowerBound)
+    }
+
+    func testAppleTerminalSessionControllerReturnsNilWithoutSessions() throws {
+        var didRunScript = false
+        let controller = AppleTerminalSessionController { _ in
+            didRunScript = true
+            return "found=false"
+        }
+
+        let result = try controller.focusFirstRunningSession(from: [])
+
+        XCTAssertNil(result)
+        XCTAssertFalse(didRunScript)
+    }
+
+    func testAppleTerminalSessionControllerReturnsNilWhenTerminalDoesNotMatch() throws {
+        let session = TrackedSession(
+            id: "session-123",
+            projectName: "Demo",
+            projectPath: "/tmp/Demo",
+            openedAt: Date(timeIntervalSince1970: 300),
+            terminalApp: .appleTerminal
+        )
+        let controller = AppleTerminalSessionController { _ in
+            "found=false"
+        }
+
+        let result = try controller.focusFirstRunningSession(from: [session])
+
+        XCTAssertNil(result)
+        XCTAssertNil(controller.runningTerminalSession(payload: "found=false", sessions: [session]))
+        XCTAssertNil(
+            controller.runningTerminalSession(
+                payload: """
+                found=true
+                marker=WhereMyOpenCode:unknown
+                """,
+                sessions: [session]
+            )
+        )
+    }
+
     func testOpenCodeLauncherBuildsEscapedCommandAndTerminalTitleScript() {
         let launcher = OpenCodeLauncher()
         let command = launcher.terminalCommand(

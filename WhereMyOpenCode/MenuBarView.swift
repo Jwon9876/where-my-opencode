@@ -14,6 +14,7 @@ struct MenuBarView: View {
     private static let projectPageSize = 5
     private let openCodeLauncher = OpenCodeLauncher()
     private let projectScanner = ProjectScanner()
+    private let terminalSessionController = AppleTerminalSessionController()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -130,7 +131,7 @@ struct MenuBarView: View {
 
     private func recentSessionRow(_ session: TrackedSession) -> some View {
         Button {
-            launchOpenCode(for: session.project)
+            focusOrLaunchOpenCode(for: session.project)
         } label: {
             projectRowContent(
                 iconName: "clock",
@@ -161,7 +162,7 @@ struct MenuBarView: View {
 
     private func projectRow(_ project: Project) -> some View {
         Button {
-            launchOpenCode(for: project)
+            focusOrLaunchOpenCode(for: project)
         } label: {
             projectRowContent(
                 iconName: "folder",
@@ -276,6 +277,24 @@ struct MenuBarView: View {
             launchStatusMessage = error.localizedDescription
             launchStatusIsError = true
         }
+    }
+
+    private func focusOrLaunchOpenCode(for project: Project) {
+        do {
+            if try terminalSessionController.focusFirstRunningSession(
+                from: sessionStore.sessions(forProjectPath: project.path)
+            ) != nil {
+                launchStatusMessage = "Showing existing \(project.name) OpenCode session."
+                launchStatusIsError = false
+                return
+            }
+        } catch {
+            launchStatusMessage = error.localizedDescription
+            launchStatusIsError = true
+            return
+        }
+
+        launchOpenCode(for: project)
     }
 
     private func scanRootFolder() {

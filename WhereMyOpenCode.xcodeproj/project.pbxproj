@@ -19,6 +19,8 @@
 		A1000000000000000000000A /* OpenCodeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001D /* OpenCodeLauncher.swift */; };
 		A1000000000000000000000B /* TrackedSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001E /* TrackedSession.swift */; };
 		A1000000000000000000000C /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001F /* SessionStore.swift */; };
+		A1000000000000000000000D /* AppleScriptSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* AppleScriptSupport.swift */; };
+		A1000000000000000000000E /* AppleTerminalSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* AppleTerminalSessionController.swift */; };
 		A30000000000000000000001 /* CoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000011 /* CoreTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -49,6 +51,8 @@
 		A1000000000000000000001D /* OpenCodeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeLauncher.swift; sourceTree = "<group>"; };
 		A1000000000000000000001E /* TrackedSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedSession.swift; sourceTree = "<group>"; };
 		A1000000000000000000001F /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		A10000000000000000000021 /* AppleScriptSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptSupport.swift; sourceTree = "<group>"; };
+		A10000000000000000000022 /* AppleTerminalSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalSessionController.swift; sourceTree = "<group>"; };
 		A30000000000000000000010 /* WhereMyOpenCodeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WhereMyOpenCodeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000011 /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -99,6 +103,8 @@
 		A10000000000000000000032 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				A10000000000000000000021 /* AppleScriptSupport.swift */,
+				A10000000000000000000022 /* AppleTerminalSessionController.swift */,
 				A10000000000000000000019 /* AppSettings.swift */,
 				A1000000000000000000001A /* SettingsStore.swift */,
 				A1000000000000000000001B /* Project.swift */,
@@ -238,6 +244,8 @@
 				A1000000000000000000000A /* OpenCodeLauncher.swift in Sources */,
 				A1000000000000000000000B /* TrackedSession.swift in Sources */,
 				A1000000000000000000000C /* SessionStore.swift in Sources */,
+				A1000000000000000000000D /* AppleScriptSupport.swift in Sources */,
+				A1000000000000000000000E /* AppleTerminalSessionController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

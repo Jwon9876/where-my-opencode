@@ -192,11 +192,7 @@ struct OpenCodeLauncher {
     }
 
     private func appleScriptString(_ value: String) -> String {
-        let escapedValue = value
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
-
-        return "\"\(escapedValue)\""
+        AppleScriptSupport.stringLiteral(value)
     }
 
     private func appleTerminalTitleScript(tabName: String, terminalTitle: String) -> String {
