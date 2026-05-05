@@ -14,6 +14,8 @@
 		A10000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* Assets.xcassets */; };
 		A10000000000000000000006 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000019 /* AppSettings.swift */; };
 		A10000000000000000000007 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* SettingsStore.swift */; };
+		A10000000000000000000008 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001B /* Project.swift */; };
+		A10000000000000000000009 /* ProjectScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* ProjectScanner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +30,8 @@
 		A10000000000000000000018 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		A10000000000000000000019 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A1000000000000000000001A /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		A1000000000000000000001B /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		A1000000000000000000001C /* ProjectScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectScanner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +74,8 @@
 			children = (
 				A10000000000000000000019 /* AppSettings.swift */,
 				A1000000000000000000001A /* SettingsStore.swift */,
+				A1000000000000000000001B /* Project.swift */,
+				A1000000000000000000001C /* ProjectScanner.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -158,6 +164,8 @@
 				A10000000000000000000004 /* SettingsView.swift in Sources */,
 				A10000000000000000000006 /* AppSettings.swift in Sources */,
 				A10000000000000000000007 /* SettingsStore.swift in Sources */,
+				A10000000000000000000008 /* Project.swift in Sources */,
+				A10000000000000000000009 /* ProjectScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

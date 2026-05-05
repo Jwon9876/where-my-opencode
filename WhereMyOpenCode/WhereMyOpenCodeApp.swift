@@ -7,9 +7,9 @@ struct WhereMyOpenCodeApp: App {
 
     var body: some Scene {
         MenuBarExtra("Where My OpenCode", systemImage: "terminal") {
-            MenuBarView()
+            MenuBarView(settingsStore: settingsStore)
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView(settingsStore: settingsStore)
