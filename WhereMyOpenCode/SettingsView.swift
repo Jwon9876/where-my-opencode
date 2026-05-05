@@ -1,38 +1,97 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var rootFolderPath = "Not set"
-    @State private var opencodePath = "Auto-detect later"
-    @State private var scanDepth = 2
+    @ObservedObject var settingsStore: SettingsStore
 
     var body: some View {
         Form {
             Section("Root Folder") {
-                LabeledContent("Current", value: rootFolderPath)
-                Button("Change...") {}
-                    .disabled(true)
+                LabeledContent("Current", value: rootFolderDisplayValue)
+                Button("Change...") {
+                    chooseRootFolder()
+                }
             }
 
             Section("OpenCode") {
-                LabeledContent("Binary", value: opencodePath)
+                LabeledContent("Binary", value: opencodeDisplayValue)
                 HStack {
-                    Button("Change...") {}
-                        .disabled(true)
-                    Button("Test") {}
+                    Button("Change...") {
+                        chooseOpenCodeBinary()
+                    }
+                    Button("Test") {
+                    }
                         .disabled(true)
                 }
             }
 
             Section("Scan") {
-                Stepper("Depth: \(scanDepth)", value: $scanDepth, in: 1...5)
-                    .disabled(true)
+                Stepper(
+                    "Depth: \(settingsStore.settings.scanDepth)",
+                    value: scanDepthBinding,
+                    in: 1...5
+                )
             }
 
             Section("Terminal") {
-                LabeledContent("App", value: "Apple Terminal")
+                LabeledContent("App", value: settingsStore.settings.terminalApp.displayName)
+            }
+
+            if let lastErrorMessage = settingsStore.lastErrorMessage {
+                Section("Status") {
+                    Text(lastErrorMessage)
+                        .foregroundStyle(.red)
+                }
             }
         }
         .formStyle(.grouped)
         .padding(20)
+    }
+
+    private var rootFolderDisplayValue: String {
+        settingsStore.settings.rootFolderPath ?? "Not set"
+    }
+
+    private var opencodeDisplayValue: String {
+        settingsStore.settings.opencodePath ?? "Auto-detect later"
+    }
+
+    private var scanDepthBinding: Binding<Int> {
+        Binding(
+            get: {
+                settingsStore.settings.scanDepth
+            },
+            set: { newValue in
+                settingsStore.setScanDepth(newValue)
+            }
+        )
+    }
+
+    private func chooseRootFolder() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose Project Root Folder"
+        panel.message = "Choose the folder where your projects live."
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+
+        if panel.runModal() == .OK {
+            settingsStore.setRootFolderPath(panel.url?.path)
+        }
+    }
+
+    private func chooseOpenCodeBinary() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose OpenCode Binary"
+        panel.message = "Choose the opencode executable."
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+
+        if panel.runModal() == .OK {
+            settingsStore.setOpenCodePath(panel.url?.path)
+        }
     }
 }

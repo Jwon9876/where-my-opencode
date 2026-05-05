@@ -26,28 +26,21 @@ struct MenuBarView: View {
         Divider()
 
         Button("Add Manual Project...") {
-            openSettingsWindow()
         }
         .disabled(true)
 
         Button("Rescan Root Folder") {
-            openSettingsWindow()
         }
         .disabled(true)
 
         Divider()
 
-        Button("Settings...") {
-            openSettingsWindow()
+        SettingsLink {
+            Text("Settings...")
         }
 
         Button("Quit") {
             NSApplication.shared.terminate(nil)
         }
-    }
-
-    private func openSettingsWindow() {
-        NSApplication.shared.activate()
-        NSApplication.shared.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 }

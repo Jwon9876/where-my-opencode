@@ -12,6 +12,8 @@
 		A10000000000000000000003 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* MenuBarView.swift */; };
 		A10000000000000000000004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* SettingsView.swift */; };
 		A10000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* Assets.xcassets */; };
+		A10000000000000000000006 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000019 /* AppSettings.swift */; };
+		A10000000000000000000007 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* SettingsStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +26,8 @@
 		A10000000000000000000016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000017 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		A10000000000000000000018 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		A10000000000000000000019 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A1000000000000000000001A /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,10 +58,20 @@
 				A10000000000000000000012 /* AppDelegate.swift */,
 				A10000000000000000000013 /* MenuBarView.swift */,
 				A10000000000000000000014 /* SettingsView.swift */,
+				A10000000000000000000032 /* Core */,
 				A10000000000000000000015 /* Info.plist */,
 				A10000000000000000000016 /* Assets.xcassets */,
 			);
 			path = WhereMyOpenCode;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000032 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000019 /* AppSettings.swift */,
+				A1000000000000000000001A /* SettingsStore.swift */,
+			);
+			path = Core;
 			sourceTree = "<group>";
 		};
 		A10000000000000000000034 /* Products */ = {
@@ -142,6 +156,8 @@
 				A10000000000000000000002 /* AppDelegate.swift in Sources */,
 				A10000000000000000000003 /* MenuBarView.swift in Sources */,
 				A10000000000000000000004 /* SettingsView.swift in Sources */,
+				A10000000000000000000006 /* AppSettings.swift in Sources */,
+				A10000000000000000000007 /* SettingsStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
