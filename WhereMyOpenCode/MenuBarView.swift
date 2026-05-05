@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @ObservedObject var settingsStore: SettingsStore
+    @ObservedObject var sessionStore: SessionStore
 
     @State private var projects: [Project] = []
     @State private var scanErrorMessage: String?
@@ -22,7 +23,7 @@ struct MenuBarView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    emptySection(title: "Recent", message: "No recent projects")
+                    recentSection
                     emptySection(title: "Favorites", message: "No favorites")
                     allProjectsSection
                 }
@@ -77,6 +78,31 @@ struct MenuBarView: View {
         }
     }
 
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Recent")
+                    .font(.headline)
+
+                Spacer()
+
+                if !recentSessions.isEmpty {
+                    Text("\(recentSessions.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if recentSessions.isEmpty {
+                emptyStateText("No recent projects")
+            } else {
+                ForEach(recentSessions) { session in
+                    recentSessionRow(session)
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private var allProjectsContent: some View {
         if settingsStore.settings.rootFolderPath == nil {
@@ -102,6 +128,20 @@ struct MenuBarView: View {
         }
     }
 
+    private func recentSessionRow(_ session: TrackedSession) -> some View {
+        Button {
+            launchOpenCode(for: session.project)
+        } label: {
+            projectRowContent(
+                iconName: "clock",
+                title: session.projectName,
+                subtitle: openedDateText(for: session)
+            )
+        }
+        .buttonStyle(.plain)
+        .help("Open \(session.projectName) in OpenCode\n\(session.projectPath)\n\(session.marker)")
+    }
+
     private func emptySection(title: String, message: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -123,29 +163,38 @@ struct MenuBarView: View {
         Button {
             launchOpenCode(for: project)
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "folder")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 20)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(project.name)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    Text(modifiedDateText(for: project))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+            projectRowContent(
+                iconName: "folder",
+                title: project.name,
+                subtitle: modifiedDateText(for: project)
+            )
         }
         .buttonStyle(.plain)
         .help("Open \(project.name) in OpenCode\n\(project.path)")
+    }
+
+    private func projectRowContent(iconName: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: iconName)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var footer: some View {
@@ -154,6 +203,14 @@ struct MenuBarView: View {
                 Text(launchStatusMessage)
                     .font(.caption)
                     .foregroundStyle(launchStatusIsError ? .red : .secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(2)
+            }
+
+            if let sessionErrorMessage = sessionStore.lastErrorMessage {
+                Text(sessionErrorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .lineLimit(2)
             }
@@ -190,6 +247,10 @@ struct MenuBarView: View {
         Array(projects.prefix(visibleProjectLimit))
     }
 
+    private var recentSessions: [TrackedSession] {
+        sessionStore.recentSessions(limit: Self.projectPageSize)
+    }
+
     private func modifiedDateText(for project: Project) -> String {
         guard project.modifiedDate != .distantPast else {
             return "Modified date unavailable"
@@ -198,9 +259,17 @@ struct MenuBarView: View {
         return project.modifiedDate.formatted(date: .abbreviated, time: .shortened)
     }
 
+    private func openedDateText(for session: TrackedSession) -> String {
+        "Opened \(session.openedAt.formatted(date: .abbreviated, time: .shortened))"
+    }
+
     private func launchOpenCode(for project: Project) {
+        let session = TrackedSession(project: project)
+        let settings = settingsStore.settings
+
         do {
-            try openCodeLauncher.launch(project: project, settings: settingsStore.settings)
+            let launchResult = try openCodeLauncher.launch(project: project, settings: settings, session: session)
+            sessionStore.record(session.recordingLaunch(launchResult, terminalApp: settings.terminalApp))
             launchStatusMessage = "Opening \(project.name) in OpenCode."
             launchStatusIsError = false
         } catch {

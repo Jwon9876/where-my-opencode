@@ -17,7 +17,20 @@
 		A10000000000000000000008 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001B /* Project.swift */; };
 		A10000000000000000000009 /* ProjectScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* ProjectScanner.swift */; };
 		A1000000000000000000000A /* OpenCodeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001D /* OpenCodeLauncher.swift */; };
+		A1000000000000000000000B /* TrackedSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001E /* TrackedSession.swift */; };
+		A1000000000000000000000C /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001F /* SessionStore.swift */; };
+		A30000000000000000000001 /* CoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000011 /* CoreTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A30000000000000000000081 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000060 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000040;
+			remoteInfo = WhereMyOpenCode;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000010 /* Where My OpenCode.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Where My OpenCode.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -34,10 +47,21 @@
 		A1000000000000000000001B /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
 		A1000000000000000000001C /* ProjectScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectScanner.swift; sourceTree = "<group>"; };
 		A1000000000000000000001D /* OpenCodeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeLauncher.swift; sourceTree = "<group>"; };
+		A1000000000000000000001E /* TrackedSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedSession.swift; sourceTree = "<group>"; };
+		A1000000000000000000001F /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		A30000000000000000000010 /* WhereMyOpenCodeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WhereMyOpenCodeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000011 /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A10000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000020 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -53,6 +77,7 @@
 				A10000000000000000000017 /* README.md */,
 				A10000000000000000000018 /* .gitignore */,
 				A10000000000000000000031 /* WhereMyOpenCode */,
+				A30000000000000000000030 /* WhereMyOpenCodeTests */,
 				A10000000000000000000034 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -79,6 +104,8 @@
 				A1000000000000000000001B /* Project.swift */,
 				A1000000000000000000001C /* ProjectScanner.swift */,
 				A1000000000000000000001D /* OpenCodeLauncher.swift */,
+				A1000000000000000000001E /* TrackedSession.swift */,
+				A1000000000000000000001F /* SessionStore.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -87,8 +114,17 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000010 /* Where My OpenCode.app */,
+				A30000000000000000000010 /* WhereMyOpenCodeTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A30000000000000000000030 /* WhereMyOpenCodeTests */ = {
+			isa = PBXGroup;
+			children = (
+				A30000000000000000000011 /* CoreTests.swift */,
+			);
+			path = WhereMyOpenCodeTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -111,6 +147,24 @@
 			productReference = A10000000000000000000010 /* Where My OpenCode.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A30000000000000000000040 /* WhereMyOpenCodeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A30000000000000000000070 /* Build configuration list for PBXNativeTarget "WhereMyOpenCodeTests" */;
+			buildPhases = (
+				A30000000000000000000050 /* Sources */,
+				A30000000000000000000020 /* Frameworks */,
+				A30000000000000000000051 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A30000000000000000000080 /* PBXTargetDependency */,
+			);
+			name = WhereMyOpenCodeTests;
+			productName = WhereMyOpenCodeTests;
+			productReference = A30000000000000000000010 /* WhereMyOpenCodeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -124,6 +178,10 @@
 					A10000000000000000000040 = {
 						CreatedOnToolsVersion = 26.4;
 						LastSwiftMigration = 2640;
+					};
+					A30000000000000000000040 = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = A10000000000000000000040;
 					};
 				};
 			};
@@ -141,6 +199,7 @@
 			projectRoot = "";
 			targets = (
 				A10000000000000000000040 /* WhereMyOpenCode */,
+				A30000000000000000000040 /* WhereMyOpenCodeTests */,
 			);
 		};
 /* End PBXProject section */
@@ -151,6 +210,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000005 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000051 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,10 +236,28 @@
 				A10000000000000000000008 /* Project.swift in Sources */,
 				A10000000000000000000009 /* ProjectScanner.swift in Sources */,
 				A1000000000000000000000A /* OpenCodeLauncher.swift in Sources */,
+				A1000000000000000000000B /* TrackedSession.swift in Sources */,
+				A1000000000000000000000C /* SessionStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000050 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A30000000000000000000001 /* CoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A30000000000000000000080 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000040 /* WhereMyOpenCode */;
+			targetProxy = A30000000000000000000081 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A10000000000000000000062 /* Debug */ = {
@@ -289,6 +373,56 @@
 			};
 			name = Release;
 		};
+		A30000000000000000000071 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.choejuwon.where-my-opencode.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Where My OpenCode.app/Contents/MacOS/Where My OpenCode";
+			};
+			name = Debug;
+		};
+		A30000000000000000000072 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.choejuwon.where-my-opencode.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Where My OpenCode.app/Contents/MacOS/Where My OpenCode";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -306,6 +440,15 @@
 			buildConfigurations = (
 				A10000000000000000000071 /* Debug */,
 				A10000000000000000000072 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A30000000000000000000070 /* Build configuration list for PBXNativeTarget "WhereMyOpenCodeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A30000000000000000000071 /* Debug */,
+				A30000000000000000000072 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

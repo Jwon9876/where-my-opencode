@@ -7,13 +7,18 @@ struct OpenCodeLauncher {
         self.fileManager = fileManager
     }
 
-    func launch(project: Project, settings: AppSettings) throws {
+    func launch(project: Project, settings: AppSettings, session: TrackedSession) throws -> OpenCodeLaunchResult {
         try validateProjectFolder(at: project.path)
         try validateConfiguredBinary(settings.opencodePath)
 
         switch settings.terminalApp {
         case .appleTerminal:
-            try launchInAppleTerminal(projectPath: project.path, opencodePath: settings.opencodePath)
+            return try launchInAppleTerminal(
+                sessionID: session.id,
+                projectPath: project.path,
+                opencodePath: settings.opencodePath,
+                terminalTitle: session.terminalTitle
+            )
         }
     }
 
@@ -27,14 +32,18 @@ struct OpenCodeLauncher {
         return "No binary selected. Terminal will run opencode from your shell."
     }
 
-    private func launchInAppleTerminal(projectPath: String, opencodePath: String?) throws {
-        let command = "cd \(shellQuoted(projectPath)) && \(opencodeCommand(opencodePath: opencodePath))"
-        let source = """
+    func terminalCommand(projectPath: String, opencodePath: String?) -> String {
+        "cd \(shellQuoted(projectPath)) && \(opencodeCommand(opencodePath: opencodePath))"
+    }
+
+    func appleTerminalScript(command: String, terminalTitle: String) -> String {
+        """
         set terminalWasRunning to application "Terminal" is running
+        set launchedTab to missing value
 
         tell application "Terminal"
             if terminalWasRunning then
-                do script \(appleScriptString(command))
+                set launchedTab to do script \(appleScriptString(command))
             else
                 launch
                 repeat 20 times
@@ -43,17 +52,67 @@ struct OpenCodeLauncher {
                 end repeat
 
                 if (count of windows) > 0 then
-                    do script \(appleScriptString(command)) in front window
+                    set launchedTab to do script \(appleScriptString(command)) in front window
                 else
-                    do script \(appleScriptString(command))
+                    set launchedTab to do script \(appleScriptString(command))
                 end if
+            end if
+
+            set launchedWindowID to ""
+            set launchedTTY to ""
+            set launchedCustomTitle to ""
+
+            if launchedTab is not missing value then
+                repeat 12 times
+        \(appleTerminalTitleScript(tabName: "launchedTab", terminalTitle: terminalTitle))
+                    delay 0.25
+                end repeat
+
+                set launchedCustomTitle to custom title of launchedTab
+
+                try
+                    set launchedTTY to tty of launchedTab
+                end try
+
+                repeat with terminalWindow in windows
+                    repeat with terminalTab in tabs of terminalWindow
+                        try
+                            if launchedTTY is not "" and tty of terminalTab is launchedTTY then
+                                set launchedWindowID to (id of terminalWindow as text)
+                                exit repeat
+                            end if
+                        end try
+
+                        try
+                            if launchedWindowID is "" and custom title of terminalTab is launchedCustomTitle then
+                                set launchedWindowID to (id of terminalWindow as text)
+                                exit repeat
+                            end if
+                        end try
+                    end repeat
+
+                    if launchedWindowID is not "" then exit repeat
+                end repeat
             end if
 
             activate
         end tell
-        """
 
-        try runAppleScript(source)
+        return "terminalWindowID=" & launchedWindowID & linefeed & "terminalTabTTY=" & launchedTTY & linefeed & "terminalCustomTitle=" & launchedCustomTitle
+        """
+    }
+
+    private func launchInAppleTerminal(
+        sessionID: String,
+        projectPath: String,
+        opencodePath: String?,
+        terminalTitle: String
+    ) throws -> OpenCodeLaunchResult {
+        let command = terminalCommand(projectPath: projectPath, opencodePath: opencodePath)
+        let source = appleTerminalScript(command: command, terminalTitle: terminalTitle)
+        let payload = try runAppleScript(source)
+
+        return appleTerminalLaunchResult(sessionID: sessionID, payload: payload)
     }
 
     private func validateProjectFolder(at path: String) throws {
@@ -86,18 +145,46 @@ struct OpenCodeLauncher {
         return shellQuoted(opencodePath)
     }
 
-    private func runAppleScript(_ source: String) throws {
+    private func runAppleScript(_ source: String) throws -> String {
         guard let script = NSAppleScript(source: source) else {
             throw OpenCodeLauncherError.appleScriptFailed("Could not prepare Terminal command.")
         }
 
         var errorInfo: NSDictionary?
-        script.executeAndReturnError(&errorInfo)
+        let result = script.executeAndReturnError(&errorInfo)
 
         if let errorInfo {
             let message = errorInfo[NSAppleScript.errorMessage] as? String
             throw OpenCodeLauncherError.appleScriptFailed(message ?? "Terminal did not accept the command.")
         }
+
+        return result.stringValue ?? ""
+    }
+
+    func appleTerminalLaunchResult(
+        sessionID: String,
+        payload: String,
+        launchedAt: Date = Date()
+    ) -> OpenCodeLaunchResult {
+        let values = payload
+            .components(separatedBy: .newlines)
+            .reduce(into: [String: String]()) { partialResult, line in
+                guard let separatorIndex = line.firstIndex(of: "=") else {
+                    return
+                }
+
+                let key = String(line[..<separatorIndex])
+                let valueStartIndex = line.index(after: separatorIndex)
+                partialResult[key] = String(line[valueStartIndex...])
+            }
+
+        return OpenCodeLaunchResult(
+            sessionID: sessionID,
+            terminalWindowID: values["terminalWindowID"].flatMap(Int.init),
+            terminalTabTTY: Self.nonEmptyValue(values["terminalTabTTY"]),
+            terminalCustomTitle: Self.nonEmptyValue(values["terminalCustomTitle"]),
+            launchedAt: launchedAt
+        )
     }
 
     private func shellQuoted(_ value: String) -> String {
@@ -111,6 +198,33 @@ struct OpenCodeLauncher {
 
         return "\"\(escapedValue)\""
     }
+
+    private func appleTerminalTitleScript(tabName: String, terminalTitle: String) -> String {
+        """
+                set custom title of \(tabName) to \(appleScriptString(terminalTitle))
+                set title displays custom title of \(tabName) to true
+                set title displays device name of \(tabName) to false
+                set title displays shell path of \(tabName) to false
+                set title displays window size of \(tabName) to false
+                set title displays file name of \(tabName) to false
+        """
+    }
+
+    private static func nonEmptyValue(_ value: String?) -> String? {
+        guard let value, !value.isEmpty else {
+            return nil
+        }
+
+        return value
+    }
+}
+
+struct OpenCodeLaunchResult: Equatable {
+    let sessionID: String
+    let terminalWindowID: Int?
+    let terminalTabTTY: String?
+    let terminalCustomTitle: String?
+    let launchedAt: Date
 }
 
 enum OpenCodeLauncherError: LocalizedError {

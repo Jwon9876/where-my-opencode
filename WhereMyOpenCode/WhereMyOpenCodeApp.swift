@@ -4,10 +4,11 @@ import SwiftUI
 struct WhereMyOpenCodeApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var settingsStore = SettingsStore()
+    @StateObject private var sessionStore = SessionStore()
 
     var body: some Scene {
         MenuBarExtra("Where My OpenCode", systemImage: "terminal") {
-            MenuBarView(settingsStore: settingsStore)
+            MenuBarView(settingsStore: settingsStore, sessionStore: sessionStore)
         }
         .menuBarExtraStyle(.window)
 
