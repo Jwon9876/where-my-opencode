@@ -25,14 +25,6 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Scan") {
-                Stepper(
-                    "Depth: \(settingsStore.settings.scanDepth)",
-                    value: scanDepthBinding,
-                    in: 1...5
-                )
-            }
-
             Section("Terminal") {
                 LabeledContent("App", value: settingsStore.settings.terminalApp.displayName)
             }
@@ -54,17 +46,6 @@ struct SettingsView: View {
 
     private var opencodeDisplayValue: String {
         settingsStore.settings.opencodePath ?? "Auto-detect later"
-    }
-
-    private var scanDepthBinding: Binding<Int> {
-        Binding(
-            get: {
-                settingsStore.settings.scanDepth
-            },
-            set: { newValue in
-                settingsStore.setScanDepth(newValue)
-            }
-        )
     }
 
     private func chooseRootFolder() {

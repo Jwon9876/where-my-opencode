@@ -32,11 +32,6 @@ final class SettingsStore: ObservableObject {
         saveSettings()
     }
 
-    func setScanDepth(_ depth: Int) {
-        settings.scanDepth = min(max(depth, 1), 5)
-        saveSettings()
-    }
-
     func setTerminalApp(_ terminalApp: TerminalApp) {
         settings.terminalApp = terminalApp
         saveSettings()
