@@ -359,8 +359,11 @@ final class CoreTests: XCTestCase {
             XCTAssertTrue(source.contains("terminalWindowID is expectedWindowID and terminalTTY is expectedTTY"))
             XCTAssertTrue(source.contains("\"42\""))
             XCTAssertTrue(source.contains("\"/dev/ttys042\""))
-            XCTAssertTrue(source.contains("my raiseSelectedWindow(\"Terminal\")"))
-            XCTAssertTrue(source.contains("perform action \"AXRaise\" of window 1"))
+            XCTAssertTrue(source.contains("my raiseWindowMatching(\"Terminal\", markerText)"))
+            XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
+            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+            XCTAssertFalse(source.contains("raiseSelectedWindow"))
             XCTAssertFalse(source.contains("\n                            activate"))
 
             return """
@@ -376,6 +379,57 @@ final class CoreTests: XCTestCase {
 
         XCTAssertEqual(result?.sessionID, "session-123")
         XCTAssertEqual(result?.terminalCustomTitle, "OpenCode")
+    }
+
+    func testAppleTerminalSessionControllerFocusesMultipleRunningSessions() throws {
+        let firstSession = RunningTerminalSession(
+            sessionID: "first-session",
+            marker: "WhereMyOpenCode:first-session",
+            terminalApp: .appleTerminal,
+            terminalWindowID: 41,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys041",
+            terminalCustomTitle: "WhereMyOpenCode:first-session App"
+        )
+        let secondSession = RunningTerminalSession(
+            sessionID: "second-session",
+            marker: "WhereMyOpenCode:second-session",
+            terminalApp: .appleTerminal,
+            terminalWindowID: 42,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys042",
+            terminalCustomTitle: "WhereMyOpenCode:second-session App"
+        )
+        let controller = AppleTerminalSessionController { source in
+            XCTAssertTrue(source.contains("set payloadParts to {}"))
+            XCTAssertTrue(source.contains("set end of payloadParts"))
+            XCTAssertTrue(source.contains("set candidateMatched to true"))
+            XCTAssertTrue(source.contains("set selected tab of terminalWindow to terminalTab"))
+            XCTAssertTrue(source.contains("my raiseWindowMatching(\"Terminal\", markerText)"))
+            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+            XCTAssertFalse(source.contains("raiseSelectedWindow"))
+            XCTAssertFalse(source.contains("activate"))
+
+            return """
+            found=true
+            ---
+            marker=\(firstSession.marker)
+            terminalWindowID=41
+            terminalTabTTY=/dev/ttys041
+            terminalCustomTitle=OpenCode
+            ---
+            marker=\(secondSession.marker)
+            terminalWindowID=42
+            terminalTabTTY=/dev/ttys042
+            terminalCustomTitle=OpenCode
+            """
+        }
+
+        let result = try controller.focusRunningSessions([firstSession, secondSession])
+
+        XCTAssertEqual(result.map(\.sessionID), ["first-session", "second-session"])
+        XCTAssertEqual(result.map(\.terminalWindowID), [41, 42])
     }
 
     func testAppleTerminalSessionControllerReturnsEmptyRunningSessionsWhenTerminalDoesNotMatch() throws {
@@ -771,8 +825,11 @@ final class CoreTests: XCTestCase {
             XCTAssertTrue(source.contains("select terminalSession"))
             XCTAssertTrue(source.contains("select terminalTab"))
             XCTAssertTrue(source.contains("select terminalWindow"))
-            XCTAssertTrue(source.contains("my raiseSelectedWindow(\"iTerm2\")"))
-            XCTAssertTrue(source.contains("perform action \"AXRaise\" of window 1"))
+            XCTAssertTrue(source.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
+            XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
+            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+            XCTAssertFalse(source.contains("raiseSelectedWindow"))
             XCTAssertFalse(source.contains("\n                                activate"))
 
             return """
@@ -791,6 +848,61 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(result?.terminalApp, .iTerm2)
         XCTAssertEqual(result?.terminalSessionID, "iterm-session-123")
         XCTAssertEqual(result?.terminalCustomTitle, "OpenCode")
+    }
+
+    func testITermSessionControllerFocusesMultipleRunningSessions() throws {
+        let firstSession = RunningTerminalSession(
+            sessionID: "first-session",
+            marker: "WhereMyOpenCode:first-session",
+            terminalApp: .iTerm2,
+            terminalWindowID: 51,
+            terminalSessionID: "iterm-first",
+            terminalTabTTY: "/dev/ttys051",
+            terminalCustomTitle: "OpenCode"
+        )
+        let secondSession = RunningTerminalSession(
+            sessionID: "second-session",
+            marker: "WhereMyOpenCode:second-session",
+            terminalApp: .iTerm2,
+            terminalWindowID: 52,
+            terminalSessionID: "iterm-second",
+            terminalTabTTY: "/dev/ttys052",
+            terminalCustomTitle: "OpenCode"
+        )
+        let controller = ITermSessionController { source in
+            XCTAssertTrue(source.contains("set payloadParts to {}"))
+            XCTAssertTrue(source.contains("set end of payloadParts"))
+            XCTAssertTrue(source.contains("set candidateMatched to true"))
+            XCTAssertTrue(source.contains("select terminalSession"))
+            XCTAssertTrue(source.contains("select terminalWindow"))
+            XCTAssertTrue(source.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
+            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+            XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
+            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+            XCTAssertFalse(source.contains("raiseSelectedWindow"))
+            XCTAssertFalse(source.contains("activate"))
+
+            return """
+            found=true
+            ---
+            marker=\(firstSession.marker)
+            terminalWindowID=51
+            terminalSessionID=iterm-first
+            terminalTabTTY=/dev/ttys051
+            terminalCustomTitle=OpenCode
+            ---
+            marker=\(secondSession.marker)
+            terminalWindowID=52
+            terminalSessionID=iterm-second
+            terminalTabTTY=/dev/ttys052
+            terminalCustomTitle=OpenCode
+            """
+        }
+
+        let result = try controller.focusRunningSessions([firstSession, secondSession])
+
+        XCTAssertEqual(result.map(\.sessionID), ["first-session", "second-session"])
+        XCTAssertEqual(result.map(\.terminalSessionID), ["iterm-first", "iterm-second"])
     }
 
     func testITermSessionControllerReturnsEmptyRunningSessionsWhenITermDoesNotMatch() throws {
@@ -918,6 +1030,402 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(result.map(\.terminalApp), [.iTerm2, .appleTerminal])
         XCTAssertEqual(result.first?.terminalSessionID, "iterm-session-id")
         XCTAssertNil(result.last?.terminalSessionID)
+    }
+
+    func testTerminalSessionControllerFocusesOnlyProjectCandidateRunningSessions() throws {
+        let olderAppSession = TrackedSession(
+            id: "older-app",
+            projectName: "App",
+            projectPath: "/tmp/App",
+            openedAt: Date(timeIntervalSince1970: 100),
+            terminalApp: .appleTerminal
+        )
+        let latestAppSession = TrackedSession(
+            id: "latest-app",
+            projectName: "App",
+            projectPath: "/tmp/App",
+            openedAt: Date(timeIntervalSince1970: 300),
+            terminalApp: .appleTerminal
+        )
+        let toolSession = TrackedSession(
+            id: "tool",
+            projectName: "Tool",
+            projectPath: "/tmp/Tool",
+            openedAt: Date(timeIntervalSince1970: 400),
+            terminalApp: .appleTerminal
+        )
+        var appleScripts: [String] = []
+        let appleController = AppleTerminalSessionController { source in
+            appleScripts.append(source)
+
+            if source.contains("markersToFind") {
+                XCTAssertTrue(source.contains(latestAppSession.marker))
+                XCTAssertTrue(source.contains(olderAppSession.marker))
+                XCTAssertFalse(source.contains(toolSession.marker))
+
+                return """
+                found=true
+                ---
+                marker=\(latestAppSession.marker)
+                terminalWindowID=9
+                terminalTabTTY=/dev/ttys009
+                terminalCustomTitle=OpenCode
+                ---
+                marker=\(olderAppSession.marker)
+                terminalWindowID=7
+                terminalTabTTY=/dev/ttys007
+                terminalCustomTitle=OpenCode
+                """
+            }
+
+            return """
+            found=true
+            ---
+            marker=\(olderAppSession.marker)
+            terminalWindowID=7
+            terminalTabTTY=/dev/ttys007
+            terminalCustomTitle=\(olderAppSession.terminalTitle)
+            ---
+            marker=\(toolSession.marker)
+            terminalWindowID=8
+            terminalTabTTY=/dev/ttys008
+            terminalCustomTitle=\(toolSession.terminalTitle)
+            ---
+            marker=\(latestAppSession.marker)
+            terminalWindowID=9
+            terminalTabTTY=/dev/ttys009
+            terminalCustomTitle=\(latestAppSession.terminalTitle)
+            """
+        }
+        let iTermController = ITermSessionController { _ in
+            XCTFail("iTerm2 should not be asked to focus Apple Terminal sessions.")
+            return "found=false"
+        }
+        let controller = TerminalSessionController(
+            appleTerminalSessionController: appleController,
+            iTermSessionController: iTermController
+        )
+
+        let result = try controller.focusRunningSessions(from: [olderAppSession, latestAppSession])
+
+        XCTAssertEqual(result.map(\.sessionID), ["latest-app", "older-app"])
+        XCTAssertEqual(result.map(\.terminalWindowID), [9, 7])
+        XCTAssertEqual(appleScripts.count, 2)
+    }
+
+    func testTerminalSessionControllerFocusesOnlyRequestedLiveSession() throws {
+        let requestedSession = RunningTerminalSession(
+            sessionID: "requested-session",
+            marker: "WhereMyOpenCode:requested-session",
+            terminalApp: .appleTerminal,
+            terminalWindowID: 12,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys012",
+            terminalCustomTitle: "OpenCode"
+        )
+        let siblingSession = RunningTerminalSession(
+            sessionID: "sibling-session",
+            marker: "WhereMyOpenCode:sibling-session",
+            terminalApp: .appleTerminal,
+            terminalWindowID: 13,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys013",
+            terminalCustomTitle: "OpenCode"
+        )
+        let appleController = AppleTerminalSessionController { source in
+            XCTAssertTrue(source.contains(requestedSession.marker))
+            XCTAssertFalse(source.contains(siblingSession.marker))
+
+            return """
+            found=true
+            ---
+            marker=\(requestedSession.marker)
+            terminalWindowID=12
+            terminalTabTTY=/dev/ttys012
+            terminalCustomTitle=OpenCode
+            """
+        }
+        let controller = TerminalSessionController(
+            appleTerminalSessionController: appleController,
+            iTermSessionController: ITermSessionController()
+        )
+
+        let result = try controller.focusRunningSessions([requestedSession])
+
+        XCTAssertEqual(result.map(\.sessionID), ["requested-session"])
+    }
+
+    func testRaiseWindowMatchingHandlerOnlyRaisesByTitleMatch() {
+        let handler = OpenCodeLauncher.raiseWindowMatchingHandlerSource
+
+        XCTAssertTrue(handler.contains("on raiseWindowMatching(processName, identifier)"))
+        XCTAssertTrue(handler.contains("if identifier is \"\" then return"))
+        XCTAssertTrue(handler.contains("repeat with axWindow in windows"))
+        XCTAssertTrue(handler.contains("set windowTitle to title of axWindow"))
+        XCTAssertTrue(handler.contains("if windowTitle contains identifier"))
+        XCTAssertTrue(handler.contains("perform action \"AXRaise\" of axWindow"))
+        XCTAssertFalse(handler.contains("perform action \"AXRaise\" of window 1"))
+        XCTAssertFalse(handler.contains("activate"))
+        XCTAssertFalse(handler.contains("set frontmost to true"))
+    }
+
+    func testAppleTerminalFocusScriptRaisesPerCandidateMarkerOnly() {
+        let firstSession = RunningTerminalSession(
+            sessionID: "first-session",
+            marker: "WhereMyOpenCode:first-session",
+            terminalApp: .appleTerminal,
+            terminalWindowID: 11,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys011",
+            terminalCustomTitle: "OpenCode"
+        )
+        let secondSession = RunningTerminalSession(
+            sessionID: "second-session",
+            marker: "WhereMyOpenCode:second-session",
+            terminalApp: .appleTerminal,
+            terminalWindowID: 12,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys012",
+            terminalCustomTitle: "OpenCode"
+        )
+        let unrelatedSession = RunningTerminalSession(
+            sessionID: "unrelated-session",
+            marker: "WhereMyOpenCode:unrelated-session",
+            terminalApp: .appleTerminal,
+            terminalWindowID: 13,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys013",
+            terminalCustomTitle: "OpenCode"
+        )
+        let controller = AppleTerminalSessionController()
+        let script = controller.appleTerminalFocusScript(runningSessions: [firstSession, secondSession])
+
+        XCTAssertTrue(script.contains(firstSession.marker))
+        XCTAssertTrue(script.contains(secondSession.marker))
+        XCTAssertFalse(script.contains(unrelatedSession.marker))
+
+        XCTAssertEqual(occurrences(of: "my raiseWindowMatching(\"Terminal\", markerText)", in: script), 1)
+        XCTAssertEqual(occurrences(of: "perform action \"AXRaise\" of axWindow", in: script), 1)
+        XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
+        XCTAssertFalse(script.contains("raiseSelectedWindow"))
+        XCTAssertFalse(script.contains("activate"))
+    }
+
+    func testITermFocusScriptRaisesPerCandidateMarkerOnly() {
+        let firstSession = RunningTerminalSession(
+            sessionID: "first-session",
+            marker: "WhereMyOpenCode:first-session",
+            terminalApp: .iTerm2,
+            terminalWindowID: 21,
+            terminalSessionID: "iterm-first",
+            terminalTabTTY: "/dev/ttys021",
+            terminalCustomTitle: "OpenCode"
+        )
+        let secondSession = RunningTerminalSession(
+            sessionID: "second-session",
+            marker: "WhereMyOpenCode:second-session",
+            terminalApp: .iTerm2,
+            terminalWindowID: 22,
+            terminalSessionID: "iterm-second",
+            terminalTabTTY: "/dev/ttys022",
+            terminalCustomTitle: "OpenCode"
+        )
+        let unrelatedSession = RunningTerminalSession(
+            sessionID: "unrelated-session",
+            marker: "WhereMyOpenCode:unrelated-session",
+            terminalApp: .iTerm2,
+            terminalWindowID: 23,
+            terminalSessionID: "iterm-unrelated",
+            terminalTabTTY: "/dev/ttys023",
+            terminalCustomTitle: "OpenCode"
+        )
+        let controller = ITermSessionController()
+        let script = controller.iTerm2FocusScript(runningSessions: [firstSession, secondSession])
+
+        XCTAssertTrue(script.contains(firstSession.marker))
+        XCTAssertTrue(script.contains(secondSession.marker))
+        XCTAssertFalse(script.contains(unrelatedSession.marker))
+        XCTAssertTrue(script.contains(firstSession.terminalSessionID ?? ""))
+        XCTAssertTrue(script.contains(secondSession.terminalSessionID ?? ""))
+        XCTAssertFalse(script.contains(unrelatedSession.terminalSessionID ?? ""))
+
+        XCTAssertEqual(occurrences(of: "my raiseWindowMatching(\"iTerm2\", markerText)", in: script), 1)
+        XCTAssertEqual(occurrences(of: "perform action \"AXRaise\" of axWindow", in: script), 1)
+        XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
+        XCTAssertFalse(script.contains("raiseSelectedWindow"))
+        XCTAssertFalse(script.contains("activate"))
+    }
+
+    func testTerminalSessionControllerFocusProjectSessionsScriptOmitsOtherProjectMarkers() throws {
+        let projectAOlder = TrackedSession(
+            id: "project-a-older",
+            projectName: "ProjectA",
+            projectPath: "/tmp/ProjectA",
+            openedAt: Date(timeIntervalSince1970: 100),
+            terminalApp: .iTerm2,
+            terminalWindowID: 31,
+            terminalSessionID: "iterm-project-a-older",
+            terminalTabTTY: "/dev/ttys031",
+            terminalCustomTitle: "OpenCode"
+        )
+        let projectALatest = TrackedSession(
+            id: "project-a-latest",
+            projectName: "ProjectA",
+            projectPath: "/tmp/ProjectA",
+            openedAt: Date(timeIntervalSince1970: 300),
+            terminalApp: .iTerm2,
+            terminalWindowID: 32,
+            terminalSessionID: "iterm-project-a-latest",
+            terminalTabTTY: "/dev/ttys032",
+            terminalCustomTitle: "OpenCode"
+        )
+        let projectBSession = TrackedSession(
+            id: "project-b",
+            projectName: "ProjectB",
+            projectPath: "/tmp/ProjectB",
+            openedAt: Date(timeIntervalSince1970: 400),
+            terminalApp: .iTerm2,
+            terminalWindowID: 33,
+            terminalSessionID: "iterm-project-b",
+            terminalTabTTY: "/dev/ttys033",
+            terminalCustomTitle: "OpenCode"
+        )
+
+        var iTermScripts: [String] = []
+        let appleController = AppleTerminalSessionController { _ in
+            "found=false"
+        }
+        let iTermController = ITermSessionController { source in
+            iTermScripts.append(source)
+
+            if source.contains("markersToFind") {
+                XCTAssertTrue(source.contains(projectAOlder.marker))
+                XCTAssertTrue(source.contains(projectALatest.marker))
+                XCTAssertFalse(
+                    source.contains(projectBSession.marker),
+                    "Project B's marker must not appear in the focus script for Project A."
+                )
+                XCTAssertFalse(
+                    source.contains(projectBSession.terminalSessionID ?? "<missing>"),
+                    "Project B's terminal session ID must not appear in Project A's focus script."
+                )
+
+                return """
+                found=true
+                ---
+                marker=\(projectALatest.marker)
+                terminalWindowID=32
+                terminalSessionID=iterm-project-a-latest
+                terminalTabTTY=/dev/ttys032
+                terminalCustomTitle=OpenCode
+                ---
+                marker=\(projectAOlder.marker)
+                terminalWindowID=31
+                terminalSessionID=iterm-project-a-older
+                terminalTabTTY=/dev/ttys031
+                terminalCustomTitle=OpenCode
+                """
+            }
+
+            return """
+            found=true
+            ---
+            terminalWindowID=31
+            terminalSessionID=iterm-project-a-older
+            terminalTabTTY=/dev/ttys031
+            terminalCustomTitle=OpenCode
+            ---
+            terminalWindowID=32
+            terminalSessionID=iterm-project-a-latest
+            terminalTabTTY=/dev/ttys032
+            terminalCustomTitle=OpenCode
+            ---
+            terminalWindowID=33
+            terminalSessionID=iterm-project-b
+            terminalTabTTY=/dev/ttys033
+            terminalCustomTitle=OpenCode
+            """
+        }
+        let controller = TerminalSessionController(
+            appleTerminalSessionController: appleController,
+            iTermSessionController: iTermController
+        )
+
+        let result = try controller.focusRunningSessions(from: [projectAOlder, projectALatest])
+
+        XCTAssertEqual(result.map(\.sessionID), ["project-a-latest", "project-a-older"])
+        XCTAssertEqual(result.map(\.terminalWindowID), [32, 31])
+        XCTAssertEqual(iTermScripts.count, 2)
+
+        let focusScript = try XCTUnwrap(iTermScripts.first { $0.contains("markersToFind") })
+        XCTAssertTrue(focusScript.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
+        XCTAssertFalse(focusScript.contains("perform action \"AXRaise\" of window 1"))
+        XCTAssertFalse(focusScript.contains(projectBSession.marker))
+    }
+
+    func testOpenCodeLauncherLaunchScriptsRaiseOnlyMarkedWindow() {
+        let launcher = OpenCodeLauncher()
+        let appleScript = launcher.appleTerminalScript(
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc"
+        )
+        let iTermScript = launcher.iTerm2Script(
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc"
+        )
+
+        for script in [appleScript, iTermScript] {
+            XCTAssertTrue(script.contains("if windowTitle contains identifier"))
+            XCTAssertTrue(script.contains("perform action \"AXRaise\" of axWindow"))
+            XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
+            XCTAssertFalse(script.contains("raiseSelectedWindow"))
+            XCTAssertFalse(script.contains("activate"))
+        }
+
+        XCTAssertTrue(appleScript.contains("my raiseWindowMatching(\"Terminal\", \"WhereMyOpenCode:abc\")"))
+        XCTAssertTrue(iTermScript.contains("my raiseWindowMatching(\"iTerm2\", \"WhereMyOpenCode:abc\")"))
+    }
+
+    func testOpenCodeLauncherLaunchScriptsWithoutFocusContainNoRaiseCalls() {
+        let launcher = OpenCodeLauncher()
+        let appleScript = launcher.appleTerminalScript(
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .none
+        )
+        let iTermScript = launcher.iTerm2Script(
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .none
+        )
+
+        for script in [appleScript, iTermScript] {
+            XCTAssertFalse(script.contains("activate"))
+            XCTAssertFalse(script.contains("AXRaise"))
+            XCTAssertFalse(script.contains("raiseWindowMatching"))
+            XCTAssertFalse(script.contains("raiseSelectedWindow"))
+            XCTAssertFalse(script.contains("set frontmost to true"))
+        }
+    }
+
+    private func occurrences(of substring: String, in source: String) -> Int {
+        guard !substring.isEmpty else {
+            return 0
+        }
+
+        var count = 0
+        var searchRange = source.startIndex..<source.endIndex
+
+        while let foundRange = source.range(of: substring, range: searchRange) {
+            count += 1
+            searchRange = foundRange.upperBound..<source.endIndex
+        }
+
+        return count
     }
 
     private func makeTemporaryDirectory() throws -> URL {

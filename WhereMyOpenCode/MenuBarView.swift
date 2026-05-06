@@ -440,7 +440,6 @@ struct MenuBarView: View {
     }
 
     private func focusOrLaunchOpenCode(for project: Project) {
-        let candidateSessions = sessionStore.sessions(forProjectPath: project.path)
         let settings = settingsStore.settings
 
         launchStatusMessage = nil
@@ -449,7 +448,9 @@ struct MenuBarView: View {
 
         Task {
             do {
-                if try await Self.focusFirstRunningSession(from: candidateSessions) != nil {
+                let focusedSessions = try await focusProjectRunningSessions(projectPath: project.path)
+
+                if !focusedSessions.isEmpty {
                     launchStatusMessage = MenuBarRowActionPolicy.showingExistingMessage(projectName: project.name)
                     launchStatusIsError = false
                     liveSessionErrorMessage = nil
@@ -463,6 +464,12 @@ struct MenuBarView: View {
 
             await launchOpenCode(for: project, settings: settings)
         }
+    }
+
+    private func focusProjectRunningSessions(projectPath: String) async throws -> [RunningTerminalSession] {
+        let candidateSessions = sessionStore.sessions(forProjectPath: projectPath)
+
+        return try await Self.focusRunningSessions(from: candidateSessions)
     }
 
     private func focusLiveSession(_ liveSession: RunningTerminalSession) {
@@ -480,7 +487,9 @@ struct MenuBarView: View {
 
         Task {
             do {
-                if try await Self.focusFirstRunningSession(from: [trackedSession]) != nil {
+                let focusedSessions = try await Self.focusRunningSessions([liveSession])
+
+                if !focusedSessions.isEmpty {
                     launchStatusMessage = MenuBarRowActionPolicy.showingExistingMessage(projectName: trackedSession.projectName)
                     launchStatusIsError = false
                     liveSessionErrorMessage = nil
@@ -560,11 +569,19 @@ struct MenuBarView: View {
         }.value
     }
 
-    nonisolated private static func focusFirstRunningSession(
+    nonisolated private static func focusRunningSessions(
         from sessions: [TrackedSession]
-    ) async throws -> RunningTerminalSession? {
+    ) async throws -> [RunningTerminalSession] {
         try await Task.detached(priority: .userInitiated) {
-            try TerminalSessionController().focusFirstRunningSession(from: sessions)
+            try TerminalSessionController().focusRunningSessions(from: sessions)
+        }.value
+    }
+
+    nonisolated private static func focusRunningSessions(
+        _ sessions: [RunningTerminalSession]
+    ) async throws -> [RunningTerminalSession] {
+        try await Task.detached(priority: .userInitiated) {
+            try TerminalSessionController().focusRunningSessions(sessions)
         }.value
     }
 

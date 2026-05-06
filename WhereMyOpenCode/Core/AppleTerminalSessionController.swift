@@ -23,18 +23,34 @@ struct TerminalSessionController {
     }
 
     func focusFirstRunningSession(from sessions: [TrackedSession]) throws -> RunningTerminalSession? {
-        let runningSessions = try runningSessions(from: sessions)
-
-        guard let runningSession = runningSessions.first,
-              let session = sessions.first(where: { $0.id == runningSession.sessionID }) else {
+        guard let runningSession = try runningSessions(from: sessions).first else {
             return nil
         }
 
-        switch runningSession.terminalApp {
-        case .appleTerminal:
-            return try appleTerminalSessionController.focusFirstRunningSession(from: [session])
-        case .iTerm2:
-            return try iTermSessionController.focusFirstRunningSession(from: [session])
+        return try focusRunningSessions([runningSession]).first
+    }
+
+    func focusRunningSessions(from sessions: [TrackedSession]) throws -> [RunningTerminalSession] {
+        try focusRunningSessions(runningSessions(from: sessions))
+    }
+
+    func focusRunningSessions(_ sessions: [RunningTerminalSession]) throws -> [RunningTerminalSession] {
+        let candidateSessions = sessions.filter {
+            $0.terminalApp == .appleTerminal || $0.terminalApp == .iTerm2
+        }
+
+        guard !candidateSessions.isEmpty else {
+            return []
+        }
+
+        let focusedSessions = try appleTerminalSessionController.focusRunningSessions(candidateSessions)
+            + iTermSessionController.focusRunningSessions(candidateSessions)
+        let orderBySessionID = Dictionary(
+            uniqueKeysWithValues: candidateSessions.enumerated().map { ($0.element.sessionID, $0.offset) }
+        )
+
+        return focusedSessions.sorted {
+            orderBySessionID[$0.sessionID, default: Int.max] < orderBySessionID[$1.sessionID, default: Int.max]
         }
     }
 
@@ -91,7 +107,21 @@ struct AppleTerminalSessionController {
             appleTerminalFocusScript(sessions: candidateSessions)
         )
 
-        return runningTerminalSession(payload: payload, sessions: candidateSessions)
+        return runningTerminalSessions(payload: payload, sessions: candidateSessions).first
+    }
+
+    func focusRunningSessions(_ sessions: [RunningTerminalSession]) throws -> [RunningTerminalSession] {
+        let candidateSessions = Self.candidateRunningSessions(from: sessions)
+
+        guard !candidateSessions.isEmpty else {
+            return []
+        }
+
+        let payload = try runAppleScript(
+            appleTerminalFocusScript(runningSessions: candidateSessions)
+        )
+
+        return runningTerminalSessions(payload: payload, runningSessions: candidateSessions)
     }
 
     func runningSessions(from sessions: [TrackedSession]) throws -> [RunningTerminalSession] {
@@ -124,6 +154,14 @@ struct AppleTerminalSessionController {
         )
     }
 
+    func appleTerminalFocusScript(runningSessions: [RunningTerminalSession]) -> String {
+        appleTerminalFocusScript(
+            markers: runningSessions.map(\.marker),
+            windowIDs: runningSessions.map { $0.terminalWindowID.map(String.init) ?? "" },
+            ttys: runningSessions.map { $0.terminalTabTTY ?? "" }
+        )
+    }
+
     private func appleTerminalFocusScript(
         markers: [String],
         windowIDs: [String],
@@ -147,85 +185,90 @@ struct AppleTerminalSessionController {
         set markersToFind to {\(markerList)}
         set windowIDsToFind to {\(windowIDList)}
         set ttysToFind to {\(ttyList)}
+        set payloadParts to {}
 
         tell application "Terminal"
             repeat with candidateIndex from 1 to count of markersToFind
                 set markerText to item candidateIndex of markersToFind
                 set expectedWindowID to item candidateIndex of windowIDsToFind
                 set expectedTTY to item candidateIndex of ttysToFind
+                set candidateMatched to false
 
                 repeat with terminalWindow in windows
-                    repeat with terminalTab in tabs of terminalWindow
-                        set terminalWindowID to ""
-                        set terminalCustomTitle to ""
-                        set terminalTTY to ""
+                    if candidateMatched is false then
+                        repeat with terminalTab in tabs of terminalWindow
+                            if candidateMatched is false then
+                                set terminalWindowID to ""
+                                set terminalCustomTitle to ""
+                                set terminalTTY to ""
 
-                        try
-                            set terminalCustomTitle to custom title of terminalTab
-                        end try
+                                try
+                                    set terminalCustomTitle to custom title of terminalTab
+                                end try
 
-                        try
-                            set terminalWindowID to (id of terminalWindow as text)
-                        end try
+                                try
+                                    set terminalWindowID to (id of terminalWindow as text)
+                                end try
 
-                        try
-                            set terminalTTY to tty of terminalTab
-                        end try
+                                try
+                                    set terminalTTY to tty of terminalTab
+                                end try
 
-                        set markerMatches to terminalCustomTitle is markerText or terminalCustomTitle begins with markerText & " "
-                        set metadataMatches to false
+                                set markerMatches to terminalCustomTitle is markerText or terminalCustomTitle begins with markerText & " "
+                                set metadataMatches to false
 
-                        if expectedWindowID is not "" and expectedTTY is not "" then
-                            if terminalWindowID is expectedWindowID and terminalTTY is expectedTTY then
-                                set metadataMatches to true
+                                if expectedWindowID is not "" and expectedTTY is not "" then
+                                    if terminalWindowID is expectedWindowID and terminalTTY is expectedTTY then
+                                        set metadataMatches to true
+                                    end if
+                                else if expectedTTY is not "" then
+                                    if terminalTTY is expectedTTY then
+                                        set metadataMatches to true
+                                    end if
+                                else if expectedWindowID is not "" then
+                                    if terminalWindowID is expectedWindowID then
+                                        set metadataMatches to true
+                                    end if
+                                end if
+
+                                if markerMatches or metadataMatches then
+                                    set selected tab of terminalWindow to terminalTab
+                                    set index of terminalWindow to 1
+
+                                    set focusedWindowID to ""
+                                    set focusedTTY to ""
+
+                                    try
+                                        set focusedWindowID to (id of terminalWindow as text)
+                                    end try
+
+                                    try
+                                        set focusedTTY to tty of terminalTab
+                                    end try
+
+                                    my raiseWindowMatching("Terminal", markerText)
+
+                                    set end of payloadParts to "marker=" & markerText & linefeed & "terminalWindowID=" & focusedWindowID & linefeed & "terminalTabTTY=" & focusedTTY & linefeed & "terminalCustomTitle=" & terminalCustomTitle
+                                    set candidateMatched to true
+                                end if
                             end if
-                        else if expectedTTY is not "" then
-                            if terminalTTY is expectedTTY then
-                                set metadataMatches to true
-                            end if
-                        else if expectedWindowID is not "" then
-                            if terminalWindowID is expectedWindowID then
-                                set metadataMatches to true
-                            end if
-                        end if
-
-                        if markerMatches or metadataMatches then
-                            set selected tab of terminalWindow to terminalTab
-                            set index of terminalWindow to 1
-
-                            set focusedWindowID to ""
-                            set focusedTTY to ""
-
-                            try
-                                set focusedWindowID to (id of terminalWindow as text)
-                            end try
-
-                            try
-                                set focusedTTY to tty of terminalTab
-                            end try
-
-                            my raiseSelectedWindow("Terminal")
-
-                            return "found=true" & linefeed & "marker=" & markerText & linefeed & "terminalWindowID=" & focusedWindowID & linefeed & "terminalTabTTY=" & focusedTTY & linefeed & "terminalCustomTitle=" & terminalCustomTitle
-                        end if
-                    end repeat
+                        end repeat
+                    end if
                 end repeat
             end repeat
         end tell
 
-        return "found=false"
+        if (count of payloadParts) is 0 then
+            return "found=false"
+        end if
 
-        on raiseSelectedWindow(processName)
-            try
-                tell application "System Events"
-                    if exists process processName then
-                        tell process processName
-                            perform action "AXRaise" of window 1
-                        end tell
-                    end if
-                end tell
-            end try
-        end raiseSelectedWindow
+        set oldDelimiters to AppleScript's text item delimiters
+        set AppleScript's text item delimiters to linefeed & "---" & linefeed
+        set focusedPayload to payloadParts as text
+        set AppleScript's text item delimiters to oldDelimiters
+
+        return "found=true" & linefeed & "---" & linefeed & focusedPayload
+        \(OpenCodeLauncher.raiseWindowMatchingHandlerSource)
         """
     }
 
@@ -329,6 +372,36 @@ struct AppleTerminalSessionController {
         }
     }
 
+    func runningTerminalSessions(
+        payload: String,
+        runningSessions: [RunningTerminalSession]
+    ) -> [RunningTerminalSession] {
+        let records = Self.keyValueRecords(payload)
+
+        guard records.first?["found"] == "true" else {
+            return []
+        }
+
+        let candidateSessions = Self.candidateRunningSessions(from: runningSessions)
+        let terminalRecords = records.count == 1 ? records : Array(records.dropFirst())
+
+        return candidateSessions.compactMap { session in
+            guard let values = terminalRecords.first(where: { Self.terminalRecord($0, matches: session) }) else {
+                return nil
+            }
+
+            return RunningTerminalSession(
+                sessionID: session.sessionID,
+                marker: session.marker,
+                terminalApp: .appleTerminal,
+                terminalWindowID: values["terminalWindowID"].flatMap(Int.init),
+                terminalSessionID: nil,
+                terminalTabTTY: Self.nonEmptyValue(values["terminalTabTTY"]),
+                terminalCustomTitle: Self.nonEmptyValue(values["terminalCustomTitle"])
+            )
+        }
+    }
+
     private static func runAppleScript(_ source: String) throws -> String {
         guard let script = NSAppleScript(source: source) else {
             throw AppleTerminalSessionControllerError.appleScriptFailed(
@@ -353,6 +426,12 @@ struct AppleTerminalSessionController {
         sessions
             .filter { $0.terminalApp == nil || $0.terminalApp == .appleTerminal }
             .sorted(by: Self.sortMostRecentFirst)
+    }
+
+    private static func candidateRunningSessions(
+        from sessions: [RunningTerminalSession]
+    ) -> [RunningTerminalSession] {
+        sessions.filter { $0.terminalApp == .appleTerminal }
     }
 
     private static func keyValueRecords(_ payload: String) -> [[String: String]] {
@@ -394,6 +473,30 @@ struct AppleTerminalSessionController {
 
         if let terminalCustomTitle = Self.nonEmptyValue(values["terminalCustomTitle"]),
            (terminalCustomTitle == session.marker || terminalCustomTitle.hasPrefix("\(session.marker) ")) {
+            return true
+        }
+
+        let terminalWindowID = values["terminalWindowID"].flatMap(Int.init)
+        let terminalTabTTY = Self.nonEmptyValue(values["terminalTabTTY"])
+
+        if let expectedWindowID = session.terminalWindowID,
+           let expectedTTY = session.terminalTabTTY {
+            return terminalWindowID == expectedWindowID && terminalTabTTY == expectedTTY
+        }
+
+        if let expectedTTY = session.terminalTabTTY {
+            return terminalTabTTY == expectedTTY
+        }
+
+        if let expectedWindowID = session.terminalWindowID {
+            return terminalWindowID == expectedWindowID
+        }
+
+        return false
+    }
+
+    private static func terminalRecord(_ values: [String: String], matches session: RunningTerminalSession) -> Bool {
+        if Self.nonEmptyValue(values["marker"]) == session.marker {
             return true
         }
 
@@ -462,7 +565,19 @@ struct ITermSessionController {
 
         let payload = try runAppleScript(iTerm2FocusScript(sessions: candidateSessions))
 
-        return runningTerminalSession(payload: payload, sessions: candidateSessions)
+        return runningTerminalSessions(payload: payload, sessions: candidateSessions).first
+    }
+
+    func focusRunningSessions(_ sessions: [RunningTerminalSession]) throws -> [RunningTerminalSession] {
+        let candidateSessions = Self.candidateRunningSessions(from: sessions)
+
+        guard !candidateSessions.isEmpty else {
+            return []
+        }
+
+        let payload = try runAppleScript(iTerm2FocusScript(runningSessions: candidateSessions))
+
+        return runningTerminalSessions(payload: payload, runningSessions: candidateSessions)
     }
 
     func runningSessions(from sessions: [TrackedSession]) throws -> [RunningTerminalSession] {
@@ -483,6 +598,15 @@ struct ITermSessionController {
             windowIDs: sessions.map { $0.terminalWindowID.map(String.init) ?? "" },
             sessionIDs: sessions.map { $0.terminalSessionID ?? "" },
             ttys: sessions.map { $0.terminalTabTTY ?? "" }
+        )
+    }
+
+    func iTerm2FocusScript(runningSessions: [RunningTerminalSession]) -> String {
+        iTerm2FocusScript(
+            markers: runningSessions.map(\.marker),
+            windowIDs: runningSessions.map { $0.terminalWindowID.map(String.init) ?? "" },
+            sessionIDs: runningSessions.map { $0.terminalSessionID ?? "" },
+            ttys: runningSessions.map { $0.terminalTabTTY ?? "" }
         )
     }
 
@@ -514,6 +638,7 @@ struct ITermSessionController {
         set windowIDsToFind to {\(windowIDList)}
         set sessionIDsToFind to {\(sessionIDList)}
         set ttysToFind to {\(ttyList)}
+        set payloadParts to {}
 
         tell application id "com.googlecode.iterm2"
             repeat with candidateIndex from 1 to count of markersToFind
@@ -521,80 +646,86 @@ struct ITermSessionController {
                 set expectedWindowID to item candidateIndex of windowIDsToFind
                 set expectedSessionID to item candidateIndex of sessionIDsToFind
                 set expectedTTY to item candidateIndex of ttysToFind
+                set candidateMatched to false
 
                 repeat with terminalWindow in windows
-                    set terminalWindowID to ""
+                    if candidateMatched is false then
+                        set terminalWindowID to ""
 
-                    try
-                        set terminalWindowID to (id of terminalWindow as text)
-                    end try
+                        try
+                            set terminalWindowID to (id of terminalWindow as text)
+                        end try
 
-                    repeat with terminalTab in tabs of terminalWindow
-                        repeat with terminalSession in sessions of terminalTab
-                            set terminalSessionID to ""
-                            set terminalTTY to ""
-                            set terminalName to ""
+                        repeat with terminalTab in tabs of terminalWindow
+                            if candidateMatched is false then
+                                repeat with terminalSession in sessions of terminalTab
+                                    if candidateMatched is false then
+                                        set terminalSessionID to ""
+                                        set terminalTTY to ""
+                                        set terminalName to ""
 
-                            try
-                                set terminalSessionID to unique id of terminalSession
-                            end try
+                                        try
+                                            set terminalSessionID to unique id of terminalSession
+                                        end try
 
-                            try
-                                set terminalTTY to tty of terminalSession
-                            end try
+                                        try
+                                            set terminalTTY to tty of terminalSession
+                                        end try
 
-                            try
-                                set terminalName to name of terminalSession
-                            end try
+                                        try
+                                            set terminalName to name of terminalSession
+                                        end try
 
-                            set markerMatches to terminalName is markerText or terminalName begins with markerText & " "
-                            set metadataMatches to false
+                                        set markerMatches to terminalName is markerText or terminalName begins with markerText & " "
+                                        set metadataMatches to false
 
-                            if expectedSessionID is not "" then
-                                if terminalSessionID is expectedSessionID then
-                                    set metadataMatches to true
-                                end if
-                            else if expectedWindowID is not "" and expectedTTY is not "" then
-                                if terminalWindowID is expectedWindowID and terminalTTY is expectedTTY then
-                                    set metadataMatches to true
-                                end if
-                            else if expectedTTY is not "" then
-                                if terminalTTY is expectedTTY then
-                                    set metadataMatches to true
-                                end if
-                            else if expectedWindowID is not "" then
-                                if terminalWindowID is expectedWindowID then
-                                    set metadataMatches to true
-                                end if
-                            end if
+                                        if expectedSessionID is not "" then
+                                            if terminalSessionID is expectedSessionID then
+                                                set metadataMatches to true
+                                            end if
+                                        else if expectedWindowID is not "" and expectedTTY is not "" then
+                                            if terminalWindowID is expectedWindowID and terminalTTY is expectedTTY then
+                                                set metadataMatches to true
+                                            end if
+                                        else if expectedTTY is not "" then
+                                            if terminalTTY is expectedTTY then
+                                                set metadataMatches to true
+                                            end if
+                                        else if expectedWindowID is not "" then
+                                            if terminalWindowID is expectedWindowID then
+                                                set metadataMatches to true
+                                            end if
+                                        end if
 
-                            if markerMatches or metadataMatches then
-                                select terminalSession
-                                select terminalTab
-                                select terminalWindow
-                                my raiseSelectedWindow("iTerm2")
+                                        if markerMatches or metadataMatches then
+                                            select terminalSession
+                                            select terminalTab
+                                            select terminalWindow
+                                            my raiseWindowMatching("iTerm2", markerText)
 
-                                return "found=true" & linefeed & "marker=" & markerText & linefeed & "terminalWindowID=" & terminalWindowID & linefeed & "terminalSessionID=" & terminalSessionID & linefeed & "terminalTabTTY=" & terminalTTY & linefeed & "terminalCustomTitle=" & terminalName
+                                            set end of payloadParts to "marker=" & markerText & linefeed & "terminalWindowID=" & terminalWindowID & linefeed & "terminalSessionID=" & terminalSessionID & linefeed & "terminalTabTTY=" & terminalTTY & linefeed & "terminalCustomTitle=" & terminalName
+                                            set candidateMatched to true
+                                        end if
+                                    end if
+                                end repeat
                             end if
                         end repeat
-                    end repeat
+                    end if
                 end repeat
             end repeat
         end tell
 
-        return "found=false"
+        if (count of payloadParts) is 0 then
+            return "found=false"
+        end if
 
-        on raiseSelectedWindow(processName)
-            try
-                tell application "System Events"
-                    if exists process processName then
-                        tell process processName
-                            perform action "AXRaise" of window 1
-                        end tell
-                    end if
-                end tell
-            end try
-        end raiseSelectedWindow
+        set oldDelimiters to AppleScript's text item delimiters
+        set AppleScript's text item delimiters to linefeed & "---" & linefeed
+        set focusedPayload to payloadParts as text
+        set AppleScript's text item delimiters to oldDelimiters
+
+        return "found=true" & linefeed & "---" & linefeed & focusedPayload
+        \(OpenCodeLauncher.raiseWindowMatchingHandlerSource)
         """
     }
 
@@ -682,6 +813,28 @@ struct ITermSessionController {
         }
     }
 
+    func runningTerminalSessions(
+        payload: String,
+        runningSessions: [RunningTerminalSession]
+    ) -> [RunningTerminalSession] {
+        let records = Self.keyValueRecords(payload)
+
+        guard records.first?["found"] == "true" else {
+            return []
+        }
+
+        let candidateSessions = Self.candidateRunningSessions(from: runningSessions)
+        let terminalRecords = records.count == 1 ? records : Array(records.dropFirst())
+
+        return candidateSessions.compactMap { session in
+            guard let values = terminalRecords.first(where: { Self.terminalRecord($0, matches: session) }) else {
+                return nil
+            }
+
+            return runningTerminalSession(values: values, runningSession: session)
+        }
+    }
+
     private func runningTerminalSession(
         values: [String: String],
         session: TrackedSession
@@ -689,6 +842,21 @@ struct ITermSessionController {
         RunningTerminalSession(
             sessionID: session.id,
             marker: session.marker,
+            terminalApp: .iTerm2,
+            terminalWindowID: values["terminalWindowID"].flatMap(Int.init),
+            terminalSessionID: Self.nonEmptyValue(values["terminalSessionID"]),
+            terminalTabTTY: Self.nonEmptyValue(values["terminalTabTTY"]),
+            terminalCustomTitle: Self.nonEmptyValue(values["terminalCustomTitle"])
+        )
+    }
+
+    private func runningTerminalSession(
+        values: [String: String],
+        runningSession: RunningTerminalSession
+    ) -> RunningTerminalSession {
+        RunningTerminalSession(
+            sessionID: runningSession.sessionID,
+            marker: runningSession.marker,
             terminalApp: .iTerm2,
             terminalWindowID: values["terminalWindowID"].flatMap(Int.init),
             terminalSessionID: Self.nonEmptyValue(values["terminalSessionID"]),
@@ -721,6 +889,12 @@ struct ITermSessionController {
         sessions
             .filter { $0.terminalApp == .iTerm2 }
             .sorted(by: Self.sortMostRecentFirst)
+    }
+
+    private static func candidateRunningSessions(
+        from sessions: [RunningTerminalSession]
+    ) -> [RunningTerminalSession] {
+        sessions.filter { $0.terminalApp == .iTerm2 }
     }
 
     private static func keyValueRecords(_ payload: String) -> [[String: String]] {
@@ -756,6 +930,10 @@ struct ITermSessionController {
     }
 
     private static func terminalRecord(_ values: [String: String], matches session: TrackedSession) -> Bool {
+        if Self.nonEmptyValue(values["marker"]) == session.marker {
+            return true
+        }
+
         if Self.nonEmptyValue(values["terminalMarker"]) == session.marker {
             return true
         }
@@ -768,6 +946,36 @@ struct ITermSessionController {
 
         if let terminalName = Self.nonEmptyValue(values["terminalCustomTitle"]),
            (terminalName == session.marker || terminalName.hasPrefix("\(session.marker) ")) {
+            return true
+        }
+
+        let terminalWindowID = values["terminalWindowID"].flatMap(Int.init)
+        let terminalTabTTY = Self.nonEmptyValue(values["terminalTabTTY"])
+
+        if let expectedWindowID = session.terminalWindowID,
+           let expectedTTY = session.terminalTabTTY {
+            return terminalWindowID == expectedWindowID && terminalTabTTY == expectedTTY
+        }
+
+        if let expectedTTY = session.terminalTabTTY {
+            return terminalTabTTY == expectedTTY
+        }
+
+        if let expectedWindowID = session.terminalWindowID {
+            return terminalWindowID == expectedWindowID
+        }
+
+        return false
+    }
+
+    private static func terminalRecord(_ values: [String: String], matches session: RunningTerminalSession) -> Bool {
+        if Self.nonEmptyValue(values["marker"]) == session.marker {
+            return true
+        }
+
+        if let terminalSessionID = Self.nonEmptyValue(values["terminalSessionID"]),
+           let expectedSessionID = session.terminalSessionID,
+           terminalSessionID == expectedSessionID {
             return true
         }
 
