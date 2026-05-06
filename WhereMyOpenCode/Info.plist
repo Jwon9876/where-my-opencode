@@ -25,11 +25,10 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Where My OpenCode uses Apple Events to open and find Terminal windows it launched.</string>
+    <string>Where My OpenCode uses Apple Events to open and find Apple Terminal or iTerm2 sessions it launched.</string>
     <key>NSDocumentsFolderUsageDescription</key>
     <string>Where My OpenCode scans the project folder you choose.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>
 </plist>
-

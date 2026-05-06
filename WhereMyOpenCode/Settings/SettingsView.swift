@@ -61,7 +61,7 @@ struct SettingsView: View {
     }
 
     private var opencodeDisplayValue: String {
-        settingsStore.settings.opencodePath ?? "Auto-detect later"
+        settingsStore.settings.opencodePath ?? "Use opencode from shell"
     }
 
     private var terminalAppBinding: Binding<TerminalApp> {

@@ -11,3 +11,4 @@ build/
 
 # Local-only implementation planning docs
 /planning/
+.cursor/plans/refactor-core-and-ui_7b449dff.plan.md
