@@ -400,7 +400,11 @@ struct MenuBarView: View {
         sessionStore.sessions.first { $0.id == liveSession.sessionID }
     }
 
-    private func launchOpenCode(for project: Project, settings: AppSettings) async {
+    private func launchOpenCode(
+        for project: Project,
+        settings: AppSettings,
+        focusPolicy: OpenCodeLaunchFocusPolicy
+    ) async {
         let session = TrackedSession(project: project)
 
         launchStatusMessage = MenuBarRowActionPolicy.openingNewSessionMessage(projectName: project.name)
@@ -411,7 +415,8 @@ struct MenuBarView: View {
             let launchResult = try await Self.launchOpenCodeInTerminal(
                 project: project,
                 settings: settings,
-                session: session
+                session: session,
+                focusPolicy: focusPolicy
             )
             let recordedSession = session.recordingLaunch(launchResult, terminalApp: settings.terminalApp)
 
@@ -435,7 +440,7 @@ struct MenuBarView: View {
         liveSessionErrorMessage = nil
 
         Task {
-            await launchOpenCode(for: project, settings: settings)
+            await launchOpenCode(for: project, settings: settings, focusPolicy: .none)
         }
     }
 
@@ -462,7 +467,7 @@ struct MenuBarView: View {
                 return
             }
 
-            await launchOpenCode(for: project, settings: settings)
+            await launchOpenCode(for: project, settings: settings, focusPolicy: .raiseLaunchedWindow)
         }
     }
 
@@ -588,10 +593,16 @@ struct MenuBarView: View {
     nonisolated private static func launchOpenCodeInTerminal(
         project: Project,
         settings: AppSettings,
-        session: TrackedSession
+        session: TrackedSession,
+        focusPolicy: OpenCodeLaunchFocusPolicy
     ) async throws -> OpenCodeLaunchResult {
         try await Task.detached(priority: .userInitiated) {
-            try OpenCodeLauncher().launch(project: project, settings: settings, session: session)
+            try OpenCodeLauncher().launch(
+                project: project,
+                settings: settings,
+                session: session,
+                focusPolicy: focusPolicy
+            )
         }.value
     }
 
