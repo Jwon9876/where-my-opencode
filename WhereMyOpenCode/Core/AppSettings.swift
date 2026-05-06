@@ -1,6 +1,6 @@
 import Foundation
 
-struct AppSettings: Codable, Equatable {
+struct AppSettings: Codable, Equatable, Sendable {
     var rootFolderPath: String?
     var opencodePath: String?
     var terminalApp: TerminalApp
@@ -16,8 +16,9 @@ struct AppSettings: Codable, Equatable {
     }
 }
 
-enum TerminalApp: String, Codable, CaseIterable, Identifiable {
+enum TerminalApp: String, Codable, CaseIterable, Identifiable, Sendable {
     case appleTerminal
+    case iTerm2
 
     var id: String {
         rawValue
@@ -27,6 +28,8 @@ enum TerminalApp: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .appleTerminal:
             "Apple Terminal"
+        case .iTerm2:
+            "iTerm2"
         }
     }
 }

@@ -19,6 +19,13 @@ struct OpenCodeLauncher {
                 opencodePath: settings.opencodePath,
                 terminalTitle: session.terminalTitle
             )
+        case .iTerm2:
+            return try launchInITerm2(
+                sessionID: session.id,
+                projectPath: project.path,
+                opencodePath: settings.opencodePath,
+                terminalTitle: session.terminalTitle
+            )
         }
     }
 
@@ -63,15 +70,19 @@ struct OpenCodeLauncher {
             set launchedCustomTitle to ""
 
             if launchedTab is not missing value then
-                repeat 12 times
         \(appleTerminalTitleScript(tabName: "launchedTab", terminalTitle: terminalTitle))
-                    delay 0.25
+
+                repeat 6 times
+                    try
+                        set launchedTTY to tty of launchedTab
+                    end try
+
+                    if launchedTTY is not "" then exit repeat
+                    delay 0.05
                 end repeat
 
-                set launchedCustomTitle to custom title of launchedTab
-
                 try
-                    set launchedTTY to tty of launchedTab
+                    set launchedCustomTitle to custom title of launchedTab
                 end try
 
                 repeat with terminalWindow in windows
@@ -102,6 +113,78 @@ struct OpenCodeLauncher {
         """
     }
 
+    func iTerm2Script(command: String, terminalTitle: String) -> String {
+        """
+        set iTermWasRunning to application id "com.googlecode.iterm2" is running
+        set launchedWindow to missing value
+        set launchedTab to missing value
+        set launchedSession to missing value
+
+        tell application id "com.googlecode.iterm2"
+            if iTermWasRunning then
+                set launchedWindow to create window with default profile
+                set launchedTab to current tab of launchedWindow
+            else
+                launch
+
+                repeat 20 times
+                    if (count of windows) > 0 then exit repeat
+                    delay 0.05
+                end repeat
+
+                if (count of windows) > 0 then
+                    set launchedWindow to current window
+                    set launchedTab to current tab of launchedWindow
+                else
+                    set launchedWindow to create window with default profile
+                    set launchedTab to current tab of launchedWindow
+                end if
+            end if
+
+            set launchedSession to current session of launchedTab
+            set launchedWindowID to ""
+            set launchedSessionID to ""
+            set launchedTTY to ""
+            set launchedName to ""
+
+            if launchedSession is not missing value then
+                try
+                    set name of launchedSession to \(appleScriptString(terminalTitle))
+                end try
+
+                try
+                    set launchedWindowID to (id of launchedWindow as text)
+                end try
+
+                try
+                    set launchedSessionID to unique id of launchedSession
+                end try
+
+                repeat 6 times
+                    try
+                        set launchedTTY to tty of launchedSession
+                    end try
+
+                    if launchedTTY is not "" then exit repeat
+                    delay 0.05
+                end repeat
+
+                try
+                    set launchedName to name of launchedSession
+                end try
+
+                select launchedSession
+                select launchedTab
+                tell launchedSession to write text \(appleScriptString(command))
+            end if
+
+            activate
+        end tell
+
+        return "terminalWindowID=" & launchedWindowID & linefeed & "terminalSessionID=" & launchedSessionID & linefeed & "terminalTabTTY=" & launchedTTY & linefeed & "terminalCustomTitle=" & launchedName
+        """
+    }
+
     private func launchInAppleTerminal(
         sessionID: String,
         projectPath: String,
@@ -113,6 +196,19 @@ struct OpenCodeLauncher {
         let payload = try runAppleScript(source)
 
         return appleTerminalLaunchResult(sessionID: sessionID, payload: payload)
+    }
+
+    private func launchInITerm2(
+        sessionID: String,
+        projectPath: String,
+        opencodePath: String?,
+        terminalTitle: String
+    ) throws -> OpenCodeLaunchResult {
+        let command = terminalCommand(projectPath: projectPath, opencodePath: opencodePath)
+        let source = iTerm2Script(command: command, terminalTitle: terminalTitle)
+        let payload = try runAppleScript(source)
+
+        return terminalLaunchResult(sessionID: sessionID, payload: payload)
     }
 
     private func validateProjectFolder(at path: String) throws {

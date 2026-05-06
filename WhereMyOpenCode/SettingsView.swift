@@ -37,7 +37,12 @@ struct SettingsView: View {
             }
 
             Section("Terminal") {
-                LabeledContent("App", value: settingsStore.settings.terminalApp.displayName)
+                Picker("App", selection: terminalAppBinding) {
+                    ForEach(TerminalApp.allCases) { terminalApp in
+                        Text(terminalApp.displayName)
+                            .tag(terminalApp)
+                    }
+                }
             }
 
             if let lastErrorMessage = settingsStore.lastErrorMessage {
@@ -57,6 +62,13 @@ struct SettingsView: View {
 
     private var opencodeDisplayValue: String {
         settingsStore.settings.opencodePath ?? "Auto-detect later"
+    }
+
+    private var terminalAppBinding: Binding<TerminalApp> {
+        Binding(
+            get: { settingsStore.settings.terminalApp },
+            set: { settingsStore.setTerminalApp($0) }
+        )
     }
 
     private func chooseRootFolder() {
