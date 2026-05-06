@@ -1,6 +1,6 @@
 import Foundation
 
-struct TrackedSession: Codable, Equatable, Hashable, Identifiable {
+struct TrackedSession: Codable, Equatable, Hashable, Identifiable, Sendable {
     static let markerPrefix = "WhereMyOpenCode"
 
     let id: String
@@ -11,6 +11,7 @@ struct TrackedSession: Codable, Equatable, Hashable, Identifiable {
     let terminalTitle: String
     let terminalApp: TerminalApp?
     let terminalWindowID: Int?
+    let terminalSessionID: String?
     let terminalTabTTY: String?
     let terminalCustomTitle: String?
     let launchedAt: Date?
@@ -22,6 +23,7 @@ struct TrackedSession: Codable, Equatable, Hashable, Identifiable {
         openedAt: Date = Date(),
         terminalApp: TerminalApp? = nil,
         terminalWindowID: Int? = nil,
+        terminalSessionID: String? = nil,
         terminalTabTTY: String? = nil,
         terminalCustomTitle: String? = nil,
         launchedAt: Date? = nil
@@ -38,6 +40,7 @@ struct TrackedSession: Codable, Equatable, Hashable, Identifiable {
         self.terminalTitle = "\(marker) \(safeProjectName)"
         self.terminalApp = terminalApp
         self.terminalWindowID = terminalWindowID
+        self.terminalSessionID = terminalSessionID
         self.terminalTabTTY = terminalTabTTY
         self.terminalCustomTitle = terminalCustomTitle
         self.launchedAt = launchedAt
@@ -64,6 +67,7 @@ struct TrackedSession: Codable, Equatable, Hashable, Identifiable {
             openedAt: openedAt,
             terminalApp: terminalApp,
             terminalWindowID: launchResult.terminalWindowID,
+            terminalSessionID: launchResult.terminalSessionID,
             terminalTabTTY: launchResult.terminalTabTTY,
             terminalCustomTitle: launchResult.terminalCustomTitle,
             launchedAt: launchResult.launchedAt

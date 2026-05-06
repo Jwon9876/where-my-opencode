@@ -1,6 +1,6 @@
 import Foundation
 
-struct Project: Codable, Equatable, Hashable, Identifiable {
+struct Project: Codable, Equatable, Hashable, Identifiable, Sendable {
     let name: String
     let path: String
     let modifiedDate: Date

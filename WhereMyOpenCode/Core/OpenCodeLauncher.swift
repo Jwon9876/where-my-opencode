@@ -166,6 +166,14 @@ struct OpenCodeLauncher {
         payload: String,
         launchedAt: Date = Date()
     ) -> OpenCodeLaunchResult {
+        terminalLaunchResult(sessionID: sessionID, payload: payload, launchedAt: launchedAt)
+    }
+
+    func terminalLaunchResult(
+        sessionID: String,
+        payload: String,
+        launchedAt: Date = Date()
+    ) -> OpenCodeLaunchResult {
         let values = payload
             .components(separatedBy: .newlines)
             .reduce(into: [String: String]()) { partialResult, line in
@@ -181,6 +189,7 @@ struct OpenCodeLauncher {
         return OpenCodeLaunchResult(
             sessionID: sessionID,
             terminalWindowID: values["terminalWindowID"].flatMap(Int.init),
+            terminalSessionID: Self.nonEmptyValue(values["terminalSessionID"]),
             terminalTabTTY: Self.nonEmptyValue(values["terminalTabTTY"]),
             terminalCustomTitle: Self.nonEmptyValue(values["terminalCustomTitle"]),
             launchedAt: launchedAt
@@ -215,9 +224,10 @@ struct OpenCodeLauncher {
     }
 }
 
-struct OpenCodeLaunchResult: Equatable {
+struct OpenCodeLaunchResult: Equatable, Sendable {
     let sessionID: String
     let terminalWindowID: Int?
+    let terminalSessionID: String?
     let terminalTabTTY: String?
     let terminalCustomTitle: String?
     let launchedAt: Date
