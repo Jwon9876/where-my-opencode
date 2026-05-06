@@ -475,7 +475,8 @@ final class CoreTests: XCTestCase {
         )
         let script = launcher.appleTerminalScript(
             command: "echo \"hello\"",
-            terminalTitle: "WhereMyOpenCode:abc \"Demo\""
+            terminalTitle: "WhereMyOpenCode:abc \"Demo\"",
+            marker: "WhereMyOpenCode:abc"
         )
 
         XCTAssertEqual(command, "cd '/tmp/John'\\''s App' && '/usr/local/bin/open code'")
@@ -496,14 +497,38 @@ final class CoreTests: XCTestCase {
         XCTAssertTrue(script.contains("delay 0.05"))
         XCTAssertFalse(script.contains("delay 0.25"))
         XCTAssertFalse(script.contains("repeat 12 times"))
+        XCTAssertTrue(script.contains("my raiseWindowMatching(\"Terminal\", \"WhereMyOpenCode:abc\")"))
+        XCTAssertTrue(script.contains("if windowTitle contains identifier"))
+        XCTAssertTrue(script.contains("perform action \"AXRaise\" of axWindow"))
+        XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
+        XCTAssertFalse(script.contains("raiseSelectedWindow"))
+        XCTAssertTrue(script.contains("set selected tab of launchedWindow to launchedTab"))
+        XCTAssertFalse(script.contains("activate"))
         XCTAssertTrue(script.contains("WhereMyOpenCode:abc \\\"Demo\\\""))
+    }
+
+    func testOpenCodeLauncherBuildsAppleTerminalScriptWithoutExplicitFocus() {
+        let launcher = OpenCodeLauncher()
+        let script = launcher.appleTerminalScript(
+            command: "echo \"hello\"",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .none
+        )
+
+        XCTAssertFalse(script.contains("activate"))
+        XCTAssertFalse(script.contains("raiseSelectedWindow"))
+        XCTAssertFalse(script.contains("raiseWindowMatching"))
+        XCTAssertFalse(script.contains("AXRaise"))
+        XCTAssertFalse(script.contains("set selected tab of launchedWindow to launchedTab"))
     }
 
     func testOpenCodeLauncherBuildsITerm2Script() {
         let launcher = OpenCodeLauncher()
         let script = launcher.iTerm2Script(
             command: "echo \"hello\"",
-            terminalTitle: "WhereMyOpenCode:abc Demo"
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc"
         )
 
         XCTAssertTrue(script.contains("set iTermWasRunning to application id \"com.googlecode.iterm2\" is running"))
@@ -520,11 +545,35 @@ final class CoreTests: XCTestCase {
         XCTAssertTrue(script.contains("unique id of launchedSession"))
         XCTAssertTrue(script.contains("tty of launchedSession"))
         XCTAssertTrue(script.contains("select launchedSession"))
+        XCTAssertTrue(script.contains("select launchedWindow"))
+        XCTAssertTrue(script.contains("my raiseWindowMatching(\"iTerm2\", \"WhereMyOpenCode:abc\")"))
+        XCTAssertTrue(script.contains("if windowTitle contains identifier"))
+        XCTAssertTrue(script.contains("perform action \"AXRaise\" of axWindow"))
+        XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
+        XCTAssertFalse(script.contains("raiseSelectedWindow"))
         XCTAssertTrue(script.contains("return \"terminalWindowID=\" & launchedWindowID"))
         XCTAssertTrue(script.contains("terminalSessionID=\" & launchedSessionID"))
         XCTAssertFalse(script.contains("whereMyOpenCodeMarker"))
         XCTAssertFalse(script.contains("terminalMarker="))
+        XCTAssertFalse(script.contains("activate"))
         XCTAssertTrue(script.contains("WhereMyOpenCode:abc Demo"))
+    }
+
+    func testOpenCodeLauncherBuildsITerm2ScriptWithoutExplicitFocus() {
+        let launcher = OpenCodeLauncher()
+        let script = launcher.iTerm2Script(
+            command: "echo \"hello\"",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .none
+        )
+
+        XCTAssertFalse(script.contains("activate"))
+        XCTAssertFalse(script.contains("raiseSelectedWindow"))
+        XCTAssertFalse(script.contains("raiseWindowMatching"))
+        XCTAssertFalse(script.contains("AXRaise"))
+        XCTAssertFalse(script.contains("select launchedSession"))
+        XCTAssertFalse(script.contains("select launchedWindow"))
     }
 
     func testOpenCodeLauncherParsesTerminalMetadataPayload() {

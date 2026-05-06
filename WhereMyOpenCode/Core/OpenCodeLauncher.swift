@@ -1,5 +1,10 @@
 import Foundation
 
+enum OpenCodeLaunchFocusPolicy: Sendable {
+    case none
+    case raiseLaunchedWindow
+}
+
 struct OpenCodeLauncher {
     private let fileManager: FileManager
 
@@ -7,7 +12,12 @@ struct OpenCodeLauncher {
         self.fileManager = fileManager
     }
 
-    func launch(project: Project, settings: AppSettings, session: TrackedSession) throws -> OpenCodeLaunchResult {
+    func launch(
+        project: Project,
+        settings: AppSettings,
+        session: TrackedSession,
+        focusPolicy: OpenCodeLaunchFocusPolicy = .raiseLaunchedWindow
+    ) throws -> OpenCodeLaunchResult {
         try validateProjectFolder(at: project.path)
         try validateConfiguredBinary(settings.opencodePath)
 
@@ -17,14 +27,18 @@ struct OpenCodeLauncher {
                 sessionID: session.id,
                 projectPath: project.path,
                 opencodePath: settings.opencodePath,
-                terminalTitle: session.terminalTitle
+                terminalTitle: session.terminalTitle,
+                marker: session.marker,
+                focusPolicy: focusPolicy
             )
         case .iTerm2:
             return try launchInITerm2(
                 sessionID: session.id,
                 projectPath: project.path,
                 opencodePath: settings.opencodePath,
-                terminalTitle: session.terminalTitle
+                terminalTitle: session.terminalTitle,
+                marker: session.marker,
+                focusPolicy: focusPolicy
             )
         }
     }
@@ -43,9 +57,15 @@ struct OpenCodeLauncher {
         "cd \(shellQuoted(projectPath)) && \(opencodeCommand(opencodePath: opencodePath))"
     }
 
-    func appleTerminalScript(command: String, terminalTitle: String) -> String {
+    func appleTerminalScript(
+        command: String,
+        terminalTitle: String,
+        marker: String = "",
+        focusPolicy: OpenCodeLaunchFocusPolicy = .raiseLaunchedWindow
+    ) -> String {
         """
         set terminalWasRunning to application "Terminal" is running
+        set launchedWindow to missing value
         set launchedTab to missing value
 
         tell application "Terminal"
@@ -90,6 +110,7 @@ struct OpenCodeLauncher {
                         try
                             if launchedTTY is not "" and tty of terminalTab is launchedTTY then
                                 set launchedWindowID to (id of terminalWindow as text)
+                                set launchedWindow to terminalWindow
                                 exit repeat
                             end if
                         end try
@@ -97,6 +118,7 @@ struct OpenCodeLauncher {
                         try
                             if launchedWindowID is "" and custom title of terminalTab is launchedCustomTitle then
                                 set launchedWindowID to (id of terminalWindow as text)
+                                set launchedWindow to terminalWindow
                                 exit repeat
                             end if
                         end try
@@ -105,15 +127,20 @@ struct OpenCodeLauncher {
                     if launchedWindowID is not "" then exit repeat
                 end repeat
             end if
-
-            activate
+        \(appleTerminalLaunchFocusScript(marker: marker, focusPolicy: focusPolicy))
         end tell
 
         return "terminalWindowID=" & launchedWindowID & linefeed & "terminalTabTTY=" & launchedTTY & linefeed & "terminalCustomTitle=" & launchedCustomTitle
+        \(raiseWindowMatchingHandlerScript(focusPolicy: focusPolicy))
         """
     }
 
-    func iTerm2Script(command: String, terminalTitle: String) -> String {
+    func iTerm2Script(
+        command: String,
+        terminalTitle: String,
+        marker: String = "",
+        focusPolicy: OpenCodeLaunchFocusPolicy = .raiseLaunchedWindow
+    ) -> String {
         """
         set iTermWasRunning to application id "com.googlecode.iterm2" is running
         set launchedWindow to missing value
@@ -173,15 +200,13 @@ struct OpenCodeLauncher {
                     set launchedName to name of launchedSession
                 end try
 
-                select launchedSession
-                select launchedTab
+        \(iTermLaunchFocusScript(marker: marker, focusPolicy: focusPolicy))
                 tell launchedSession to write text \(appleScriptString(command))
             end if
-
-            activate
         end tell
 
         return "terminalWindowID=" & launchedWindowID & linefeed & "terminalSessionID=" & launchedSessionID & linefeed & "terminalTabTTY=" & launchedTTY & linefeed & "terminalCustomTitle=" & launchedName
+        \(raiseWindowMatchingHandlerScript(focusPolicy: focusPolicy))
         """
     }
 
@@ -189,10 +214,17 @@ struct OpenCodeLauncher {
         sessionID: String,
         projectPath: String,
         opencodePath: String?,
-        terminalTitle: String
+        terminalTitle: String,
+        marker: String,
+        focusPolicy: OpenCodeLaunchFocusPolicy
     ) throws -> OpenCodeLaunchResult {
         let command = terminalCommand(projectPath: projectPath, opencodePath: opencodePath)
-        let source = appleTerminalScript(command: command, terminalTitle: terminalTitle)
+        let source = appleTerminalScript(
+            command: command,
+            terminalTitle: terminalTitle,
+            marker: marker,
+            focusPolicy: focusPolicy
+        )
         let payload = try runAppleScript(source)
 
         return appleTerminalLaunchResult(sessionID: sessionID, payload: payload)
@@ -202,10 +234,17 @@ struct OpenCodeLauncher {
         sessionID: String,
         projectPath: String,
         opencodePath: String?,
-        terminalTitle: String
+        terminalTitle: String,
+        marker: String,
+        focusPolicy: OpenCodeLaunchFocusPolicy
     ) throws -> OpenCodeLaunchResult {
         let command = terminalCommand(projectPath: projectPath, opencodePath: opencodePath)
-        let source = iTerm2Script(command: command, terminalTitle: terminalTitle)
+        let source = iTerm2Script(
+            command: command,
+            terminalTitle: terminalTitle,
+            marker: marker,
+            focusPolicy: focusPolicy
+        )
         let payload = try runAppleScript(source)
 
         return terminalLaunchResult(sessionID: sessionID, payload: payload)
@@ -310,6 +349,80 @@ struct OpenCodeLauncher {
                 set title displays file name of \(tabName) to false
         """
     }
+
+    private func appleTerminalLaunchFocusScript(
+        marker: String,
+        focusPolicy: OpenCodeLaunchFocusPolicy
+    ) -> String {
+        switch focusPolicy {
+        case .none:
+            ""
+        case .raiseLaunchedWindow:
+            """
+
+            if launchedTab is not missing value then
+                if launchedWindow is not missing value then
+                    set selected tab of launchedWindow to launchedTab
+                    set index of launchedWindow to 1
+                    my raiseWindowMatching("Terminal", \(appleScriptString(marker)))
+                end if
+            end if
+            """
+        }
+    }
+
+    private func iTermLaunchFocusScript(
+        marker: String,
+        focusPolicy: OpenCodeLaunchFocusPolicy
+    ) -> String {
+        switch focusPolicy {
+        case .none:
+            ""
+        case .raiseLaunchedWindow:
+            """
+                select launchedSession
+                select launchedTab
+                select launchedWindow
+                my raiseWindowMatching("iTerm2", \(appleScriptString(marker)))
+            """
+        }
+    }
+
+    private func raiseWindowMatchingHandlerScript(focusPolicy: OpenCodeLaunchFocusPolicy) -> String {
+        switch focusPolicy {
+        case .none:
+            ""
+        case .raiseLaunchedWindow:
+            OpenCodeLauncher.raiseWindowMatchingHandlerSource
+        }
+    }
+
+    static let raiseWindowMatchingHandlerSource: String = """
+
+    on raiseWindowMatching(processName, identifier)
+        if identifier is "" then return
+        try
+            tell application "System Events"
+                if exists process processName then
+                    tell process processName
+                        repeat 5 times
+                            repeat with axWindow in windows
+                                try
+                                    set windowTitle to title of axWindow
+                                    if windowTitle contains identifier then
+                                        perform action "AXRaise" of axWindow
+                                        return
+                                    end if
+                                end try
+                            end repeat
+                            delay 0.05
+                        end repeat
+                    end tell
+                end if
+            end tell
+        end try
+    end raiseWindowMatching
+    """
 
     private static func nonEmptyValue(_ value: String?) -> String? {
         guard let value, !value.isEmpty else {
