@@ -8,6 +8,8 @@
 
 # Where My OpenCode
 
+[English](README.md) | [한국어](README.ko.md)
+
 A macOS menu bar companion for OpenCode sessions.
 
 `where-my-opencode` helps you open, find, and refocus project-based OpenCode sessions across multiple projects.
