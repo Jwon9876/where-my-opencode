@@ -1,3 +1,11 @@
+<img
+  src="assets/app-icon.svg"
+  width="72"
+  height="72"
+  align="right"
+  alt="Where My OpenCode icon"
+/>
+
 # Where My OpenCode
 
 A macOS menu bar companion for OpenCode sessions.

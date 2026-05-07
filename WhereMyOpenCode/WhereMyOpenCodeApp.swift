@@ -7,8 +7,15 @@ struct WhereMyOpenCodeApp: App {
     @StateObject private var sessionStore = SessionStore()
 
     var body: some Scene {
-        MenuBarExtra("Where My OpenCode", systemImage: "terminal") {
+        MenuBarExtra {
             MenuBarView(settingsStore: settingsStore, sessionStore: sessionStore)
+        } label: {
+            Image("MenuBarIcon")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .accessibilityLabel("Where My OpenCode")
         }
         .menuBarExtraStyle(.window)
 

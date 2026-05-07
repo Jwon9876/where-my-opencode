@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 - 2026-05-07
+
+- Adds a custom Where My OpenCode menu bar icon.
+- Adds macOS app icon assets generated from the same icon mark.
+- Shows the project icon in the README.
+
 ## 0.1.0 - Draft
 
 Initial GitHub preview release.
