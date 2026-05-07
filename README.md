@@ -18,7 +18,7 @@ It is a lightweight companion app for people who use OpenCode across multiple pr
 
 ## Install
 
-Download `Where My OpenCode.dmg` from the latest GitHub Release, open it, and drag `Where My OpenCode.app` into `/Applications`.
+Download `Where-My-OpenCode-v<version>-macOS-unsigned.zip` from the latest GitHub Release, unzip it, and move `Where My OpenCode.app` into `/Applications`.
 
 ## Requirements
 
@@ -28,7 +28,9 @@ Download `Where My OpenCode.dmg` from the latest GitHub Release, open it, and dr
 
 ## First Run
 
-On first use, macOS may ask for Automation permission so Where My OpenCode can control your chosen terminal. It may also ask for folder access when you choose a root folder to scan.
+Because the app is distributed without Apple Developer ID notarization, open it from Finder the first time with Control-click, then choose Open. After that, you can launch it like any other app.
+
+macOS may ask for Automation permission so Where My OpenCode can control your chosen terminal. It may also ask for folder access when you choose a root folder to scan.
 
 ## Status
 
