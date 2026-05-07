@@ -10,11 +10,13 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-A macOS menu bar companion for OpenCode sessions.
+A macOS menu bar app for opening, tracking, and refocusing OpenCode sessions across projects.
 
 `where-my-opencode` helps you open, find, and refocus project-based OpenCode sessions across multiple projects.
 
 It is a lightweight companion app for people who use OpenCode across multiple projects and want a faster way to get back to the right session.
+
+![Where My OpenCode menu preview](assets/menu-preview.svg)
 
 ## Features
 
