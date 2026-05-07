@@ -28,7 +28,23 @@ Download `Where-My-OpenCode-v<version>-macOS-unsigned.zip` from the latest GitHu
 
 ## First Run
 
-Because the app is distributed without Apple Developer ID notarization, open it from Finder the first time with Control-click, then choose Open. After that, you can launch it like any other app.
+Because the app is distributed without Apple Developer ID notarization, macOS may block the first launch.
+
+If macOS says Apple cannot verify the app:
+
+1. Click Done.
+2. Open System Settings > Privacy & Security.
+3. In Security, click Open Anyway for Where My OpenCode.
+4. Confirm with your password or Touch ID, then click Open.
+
+After that first approval, you can launch it like any other app.
+
+You can also remove the download quarantine from Terminal:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Where My OpenCode.app"
+open "/Applications/Where My OpenCode.app"
+```
 
 macOS may ask for Automation permission so Where My OpenCode can control your chosen terminal. It may also ask for folder access when you choose a root folder to scan.
 
