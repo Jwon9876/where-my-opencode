@@ -7,14 +7,11 @@ struct LiveSessionsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Live Sessions")
-                    .font(.headline)
+                RadarSectionTitle(title: "Live Sessions")
 
                 Spacer()
 
-                Text("\(viewModel.liveSessions.count)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                SectionSignalLabel(kind: .live, value: "\(viewModel.liveSessions.count)")
             }
 
             if viewModel.liveSessions.isEmpty {
@@ -22,7 +19,7 @@ struct LiveSessionsSection: View {
             } else {
                 ForEach(viewModel.liveSessions, id: \.sessionID) { liveSession in
                     OpenCodeRow(
-                        iconName: "terminal",
+                        signalKind: .live,
                         title: viewModel.liveSessionTitle(for: liveSession),
                         subtitle: viewModel.liveSessionSubtitle(for: liveSession),
                         mainHelpText: viewModel.liveSessionMainHelpText(for: liveSession),

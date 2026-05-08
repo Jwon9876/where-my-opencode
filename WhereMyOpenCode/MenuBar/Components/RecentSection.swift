@@ -7,15 +7,12 @@ struct RecentSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Recent")
-                    .font(.headline)
+                RadarSectionTitle(title: "Recent")
 
                 Spacer()
 
                 if !viewModel.recentSessions.isEmpty {
-                    Text("\(viewModel.recentSessions.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    SectionSignalLabel(kind: .recent, value: "\(viewModel.recentSessions.count)")
                 }
             }
 
@@ -24,7 +21,7 @@ struct RecentSection: View {
             } else {
                 ForEach(viewModel.recentSessions) { session in
                     OpenCodeRow(
-                        iconName: "clock",
+                        signalKind: .recent,
                         title: session.projectName,
                         subtitle: viewModel.openedDateText(for: session),
                         mainHelpText: MenuBarRowActionPolicy.showOrOpenHelpText,

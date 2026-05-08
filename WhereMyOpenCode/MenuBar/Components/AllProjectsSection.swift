@@ -7,15 +7,12 @@ struct AllProjectsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("All Projects")
-                    .font(.headline)
+                RadarSectionTitle(title: "All Projects")
 
                 Spacer()
 
                 if !viewModel.projects.isEmpty {
-                    Text("\(viewModel.visibleProjects.count)/\(viewModel.projects.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    SectionSignalLabel(kind: .project, value: "\(viewModel.visibleProjects.count)/\(viewModel.projects.count)")
                 }
             }
 
@@ -35,7 +32,7 @@ struct AllProjectsSection: View {
         } else {
             ForEach(viewModel.visibleProjects) { project in
                 OpenCodeRow(
-                    iconName: "folder",
+                    signalKind: .project,
                     title: project.name,
                     subtitle: viewModel.modifiedDateText(for: project),
                     mainHelpText: MenuBarRowActionPolicy.showOrOpenHelpText,
