@@ -149,34 +149,109 @@
 		A10000000000000000000031 /* WhereMyOpenCode */ = {
 			isa = PBXGroup;
 			children = (
-				B1000000000000000000001 /* WhereMyOpenCodeApp.swift */,
-				B1000000000000000000002 /* AppDelegate.swift */,
-				A10000000000000000000032 /* Core */,
-				B50000000000000000000004 /* MenuBar */,
-				B50000000000000000000006 /* Settings */,
+				B70000000000000000000001 /* App */,
+				B70000000000000000000002 /* Models */,
+				B70000000000000000000003 /* Features */,
+				B70000000000000000000004 /* Services */,
+				B70000000000000000000005 /* Shared */,
 				A10000000000000000000015 /* Info.plist */,
 				A10000000000000000000016 /* Assets.xcassets */,
 			);
 			path = WhereMyOpenCode;
 			sourceTree = "<group>";
 		};
-		A10000000000000000000032 /* Core */ = {
+		B70000000000000000000001 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000001 /* WhereMyOpenCodeApp.swift */,
+				B1000000000000000000002 /* AppDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000002 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				B1000000000000000000003 /* AppSettings.swift */,
-				B1000000000000000000004 /* SettingsStore.swift */,
 				B1000000000000000000005 /* Project.swift */,
-				B1000000000000000000006 /* ProjectScanner.swift */,
 				B1000000000000000000007 /* TrackedSession.swift */,
-				B1000000000000000000008 /* SessionStore.swift */,
-				B50000000000000000000001 /* AppleScript */,
-				B50000000000000000000002 /* Terminal */,
-				B50000000000000000000003 /* Launch */,
+				B100000000000000000000D /* RunningTerminalSession.swift */,
+				B1000000000000000000015 /* OpenCodeLaunchResult.swift */,
 			);
-			path = Core;
+			path = Models;
 			sourceTree = "<group>";
 		};
-		B50000000000000000000001 /* AppleScript */ = {
+		B70000000000000000000003 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				B7000000000000000000000B /* MenuBar */,
+				B7000000000000000000000D /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000004 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B70000000000000000000006 /* ProjectDiscovery */,
+				B70000000000000000000007 /* Storage */,
+				B70000000000000000000008 /* OpenCodeLaunch */,
+				B70000000000000000000009 /* TerminalSessions */,
+				B7000000000000000000000A /* AppleScript */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000005 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				B7000000000000000000000E /* UI */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000006 /* ProjectDiscovery */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000006 /* ProjectScanner.swift */,
+			);
+			path = ProjectDiscovery;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000007 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000004 /* SettingsStore.swift */,
+				B1000000000000000000008 /* SessionStore.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000008 /* OpenCodeLaunch */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000014 /* OpenCodeLauncher.swift */,
+				B1000000000000000000016 /* OpenCodeLauncherError.swift */,
+				B1000000000000000000017 /* AppleTerminalLauncher.swift */,
+				B1000000000000000000018 /* ITermLauncher.swift */,
+			);
+			path = OpenCodeLaunch;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000009 /* TerminalSessions */ = {
+			isa = PBXGroup;
+			children = (
+				B100000000000000000000E /* TerminalSessionDriver.swift */,
+				B100000000000000000000F /* TerminalSessionController.swift */,
+				B1000000000000000000010 /* TerminalSessionMatcher.swift */,
+				B1000000000000000000011 /* TerminalSessionError.swift */,
+				B1000000000000000000012 /* AppleTerminalDriver.swift */,
+				B1000000000000000000013 /* ITermDriver.swift */,
+			);
+			path = TerminalSessions;
+			sourceTree = "<group>";
+		};
+		B7000000000000000000000A /* AppleScript */ = {
 			isa = PBXGroup;
 			children = (
 				B1000000000000000000009 /* AppleScriptSupport.swift */,
@@ -187,62 +262,43 @@
 			path = AppleScript;
 			sourceTree = "<group>";
 		};
-		B50000000000000000000002 /* Terminal */ = {
-			isa = PBXGroup;
-			children = (
-				B100000000000000000000D /* RunningTerminalSession.swift */,
-				B100000000000000000000E /* TerminalSessionDriver.swift */,
-				B100000000000000000000F /* TerminalSessionController.swift */,
-				B1000000000000000000010 /* TerminalSessionMatcher.swift */,
-				B1000000000000000000011 /* TerminalSessionError.swift */,
-				B1000000000000000000012 /* AppleTerminalDriver.swift */,
-				B1000000000000000000013 /* ITermDriver.swift */,
-			);
-			path = Terminal;
-			sourceTree = "<group>";
-		};
-		B50000000000000000000003 /* Launch */ = {
-			isa = PBXGroup;
-			children = (
-				B1000000000000000000014 /* OpenCodeLauncher.swift */,
-				B1000000000000000000015 /* OpenCodeLaunchResult.swift */,
-				B1000000000000000000016 /* OpenCodeLauncherError.swift */,
-				B1000000000000000000017 /* AppleTerminalLauncher.swift */,
-				B1000000000000000000018 /* ITermLauncher.swift */,
-			);
-			path = Launch;
-			sourceTree = "<group>";
-		};
-		B50000000000000000000004 /* MenuBar */ = {
+		B7000000000000000000000B /* MenuBar */ = {
 			isa = PBXGroup;
 			children = (
 				B1000000000000000000019 /* MenuBarView.swift */,
 				B100000000000000000001A /* MenuBarViewModel.swift */,
 				B100000000000000000001B /* MenuBarStatus.swift */,
 				B100000000000000000001C /* MenuBarRowActionPolicy.swift */,
-				B50000000000000000000005 /* Components */,
+				B7000000000000000000000C /* Components */,
 			);
 			path = MenuBar;
 			sourceTree = "<group>";
 		};
-		B50000000000000000000005 /* Components */ = {
+		B7000000000000000000000C /* Components */ = {
 			isa = PBXGroup;
 			children = (
 				B100000000000000000001D /* OpenCodeRow.swift */,
 				B100000000000000000001E /* LiveSessionsSection.swift */,
 				B100000000000000000001F /* RecentSection.swift */,
 				B1000000000000000000020 /* AllProjectsSection.swift */,
-				B1000000000000000000021 /* EmptyStateText.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
 		};
-		B50000000000000000000006 /* Settings */ = {
+		B7000000000000000000000D /* Settings */ = {
 			isa = PBXGroup;
 			children = (
 				B1000000000000000000022 /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		B7000000000000000000000E /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000021 /* EmptyStateText.swift */,
+			);
+			path = UI;
 			sourceTree = "<group>";
 		};
 		A10000000000000000000034 /* Products */ = {
