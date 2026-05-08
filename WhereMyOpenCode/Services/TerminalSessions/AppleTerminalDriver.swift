@@ -20,13 +20,13 @@ struct AppleTerminalDriver: TerminalSessionDriver {
     }
 
     func focusFirstRunningSession(from sessions: [TrackedSession]) throws -> RunningTerminalSession? {
-        let candidateSessions = Self.candidateSessions(from: sessions)
+        let candidateSessions = TerminalSessionCandidates.tracked(from: sessions, terminalApp: terminalApp)
 
         guard !candidateSessions.isEmpty else {
             return nil
         }
 
-        let arguments = Self.focusArguments(from: candidateSessions)
+        let arguments = TerminalSessionFocusArguments(sessions: candidateSessions)
         let payload = try runAppleScript(
             focusScript(markers: arguments.markers, windowIDs: arguments.windowIDs, ttys: arguments.ttys)
         )
@@ -37,13 +37,13 @@ struct AppleTerminalDriver: TerminalSessionDriver {
     }
 
     func focusRunningSessions(_ sessions: [RunningTerminalSession]) throws -> [RunningTerminalSession] {
-        let candidateSessions = Self.candidateRunningSessions(from: sessions)
+        let candidateSessions = TerminalSessionCandidates.running(from: sessions, terminalApp: terminalApp)
 
         guard !candidateSessions.isEmpty else {
             return []
         }
 
-        let arguments = Self.focusArguments(from: candidateSessions)
+        let arguments = TerminalSessionFocusArguments(sessions: candidateSessions)
         let payload = try runAppleScript(
             focusScript(markers: arguments.markers, windowIDs: arguments.windowIDs, ttys: arguments.ttys)
         )
@@ -54,7 +54,7 @@ struct AppleTerminalDriver: TerminalSessionDriver {
     }
 
     func runningSessions(from sessions: [TrackedSession]) throws -> [RunningTerminalSession] {
-        let candidateSessions = Self.candidateSessions(from: sessions)
+        let candidateSessions = TerminalSessionCandidates.tracked(from: sessions, terminalApp: terminalApp)
 
         guard !candidateSessions.isEmpty else {
             return []
@@ -221,105 +221,21 @@ struct AppleTerminalDriver: TerminalSessionDriver {
     }
 
     func runningTerminalSessions(payload: String, sessions: [TrackedSession]) -> [RunningTerminalSession] {
-        let records = KeyValuePayload.parseRecords(payload)
-
-        guard records.first?["found"] == "true" else {
-            return []
-        }
-
-        let candidateSessions = Self.candidateSessions(from: sessions)
-        let terminalRecords = records.count == 1 ? records : Array(records.dropFirst())
-
-        return candidateSessions.compactMap { session in
-            guard let values = terminalRecords.first(where: { TerminalSessionMatcher.record($0, matches: session) }) else {
-                return nil
-            }
-
-            return makeRunningTerminalSession(values: values, session: session)
-        }
+        TerminalSessionPayloadMapper.runningSessions(
+            payload: payload,
+            sessions: sessions,
+            terminalApp: terminalApp
+        )
     }
 
     func runningTerminalSessions(
         payload: String,
         runningSessions: [RunningTerminalSession]
     ) -> [RunningTerminalSession] {
-        let records = KeyValuePayload.parseRecords(payload)
-
-        guard records.first?["found"] == "true" else {
-            return []
-        }
-
-        let candidateSessions = Self.candidateRunningSessions(from: runningSessions)
-        let terminalRecords = records.count == 1 ? records : Array(records.dropFirst())
-
-        return candidateSessions.compactMap { session in
-            guard let values = terminalRecords.first(where: { TerminalSessionMatcher.record($0, matches: session) }) else {
-                return nil
-            }
-
-            return makeRunningTerminalSession(values: values, runningSession: session)
-        }
-    }
-
-    private func makeRunningTerminalSession(
-        values: [String: String],
-        session: TrackedSession
-    ) -> RunningTerminalSession {
-        RunningTerminalSession(
-            sessionID: session.id,
-            marker: session.marker,
-            terminalApp: .appleTerminal,
-            terminalWindowID: values["terminalWindowID"].flatMap(Int.init),
-            terminalSessionID: nil,
-            terminalTabTTY: KeyValuePayload.nonEmpty(values["terminalTabTTY"]),
-            terminalCustomTitle: KeyValuePayload.nonEmpty(values["terminalCustomTitle"])
-        )
-    }
-
-    private func makeRunningTerminalSession(
-        values: [String: String],
-        runningSession: RunningTerminalSession
-    ) -> RunningTerminalSession {
-        RunningTerminalSession(
-            sessionID: runningSession.sessionID,
-            marker: runningSession.marker,
-            terminalApp: .appleTerminal,
-            terminalWindowID: values["terminalWindowID"].flatMap(Int.init),
-            terminalSessionID: nil,
-            terminalTabTTY: KeyValuePayload.nonEmpty(values["terminalTabTTY"]),
-            terminalCustomTitle: KeyValuePayload.nonEmpty(values["terminalCustomTitle"])
-        )
-    }
-
-    private static func candidateSessions(from sessions: [TrackedSession]) -> [TrackedSession] {
-        sessions
-            .filter { $0.terminalApp == nil || $0.terminalApp == .appleTerminal }
-            .sorted(by: TerminalSessionMatcher.sortMostRecentFirst)
-    }
-
-    private static func candidateRunningSessions(
-        from sessions: [RunningTerminalSession]
-    ) -> [RunningTerminalSession] {
-        sessions.filter { $0.terminalApp == .appleTerminal }
-    }
-
-    private static func focusArguments(
-        from sessions: [TrackedSession]
-    ) -> (markers: [String], windowIDs: [String], ttys: [String]) {
-        (
-            markers: sessions.map(\.marker),
-            windowIDs: sessions.map { $0.terminalWindowID.map(String.init) ?? "" },
-            ttys: sessions.map { $0.terminalTabTTY ?? "" }
-        )
-    }
-
-    private static func focusArguments(
-        from sessions: [RunningTerminalSession]
-    ) -> (markers: [String], windowIDs: [String], ttys: [String]) {
-        (
-            markers: sessions.map(\.marker),
-            windowIDs: sessions.map { $0.terminalWindowID.map(String.init) ?? "" },
-            ttys: sessions.map { $0.terminalTabTTY ?? "" }
+        TerminalSessionPayloadMapper.runningSessions(
+            payload: payload,
+            sessions: runningSessions,
+            terminalApp: terminalApp
         )
     }
 }

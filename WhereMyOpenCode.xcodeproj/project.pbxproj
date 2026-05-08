@@ -51,6 +51,10 @@
 		D20000000000000000000008 /* MenuBarFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000008 /* MenuBarFooter.swift */; };
 		D20000000000000000000009 /* MenuBarSignalKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000009 /* MenuBarSignalKind.swift */; };
 		D2000000000000000000000A /* MenuBarSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000000A /* MenuBarSection.swift */; };
+		D2000000000000000000000B /* TerminalSessionCandidates.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000000B /* TerminalSessionCandidates.swift */; };
+		D2000000000000000000000C /* TerminalSessionFocusArguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000000C /* TerminalSessionFocusArguments.swift */; };
+		D2000000000000000000000D /* TerminalSessionPayloadMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000000D /* TerminalSessionPayloadMapper.swift */; };
+		D40000000000000000000001 /* TerminalSessionPayloadMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000001 /* TerminalSessionPayloadMapperTests.swift */; };
 		A10000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* Assets.xcassets */; };
 		B4000000000000000000001 /* ProjectScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3000000000000000000001 /* ProjectScannerTests.swift */; };
 		B4000000000000000000002 /* TrackedSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3000000000000000000002 /* TrackedSessionTests.swift */; };
@@ -125,6 +129,10 @@
 		D10000000000000000000008 /* MenuBarFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarFooter.swift; sourceTree = "<group>"; };
 		D10000000000000000000009 /* MenuBarSignalKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarSignalKind.swift; sourceTree = "<group>"; };
 		D1000000000000000000000A /* MenuBarSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarSection.swift; sourceTree = "<group>"; };
+		D1000000000000000000000B /* TerminalSessionCandidates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSessionCandidates.swift; sourceTree = "<group>"; };
+		D1000000000000000000000C /* TerminalSessionFocusArguments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSessionFocusArguments.swift; sourceTree = "<group>"; };
+		D1000000000000000000000D /* TerminalSessionPayloadMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSessionPayloadMapper.swift; sourceTree = "<group>"; };
+		D30000000000000000000001 /* TerminalSessionPayloadMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSessionPayloadMapperTests.swift; sourceTree = "<group>"; };
 		B3000000000000000000001 /* ProjectScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectScannerTests.swift; sourceTree = "<group>"; };
 		B3000000000000000000002 /* TrackedSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedSessionTests.swift; sourceTree = "<group>"; };
 		B3000000000000000000003 /* SessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreTests.swift; sourceTree = "<group>"; };
@@ -262,13 +270,16 @@
 		};
 		B70000000000000000000009 /* TerminalSessions */ = {
 			isa = PBXGroup;
-			children = (
-				B100000000000000000000E /* TerminalSessionDriver.swift */,
-				B100000000000000000000F /* TerminalSessionController.swift */,
-				B1000000000000000000010 /* TerminalSessionMatcher.swift */,
-				B1000000000000000000011 /* TerminalSessionError.swift */,
-				B1000000000000000000012 /* AppleTerminalDriver.swift */,
-				B1000000000000000000013 /* ITermDriver.swift */,
+				children = (
+					B100000000000000000000E /* TerminalSessionDriver.swift */,
+					B100000000000000000000F /* TerminalSessionController.swift */,
+					B1000000000000000000010 /* TerminalSessionMatcher.swift */,
+					B1000000000000000000011 /* TerminalSessionError.swift */,
+					D1000000000000000000000B /* TerminalSessionCandidates.swift */,
+					D1000000000000000000000C /* TerminalSessionFocusArguments.swift */,
+					D1000000000000000000000D /* TerminalSessionPayloadMapper.swift */,
+					B1000000000000000000012 /* AppleTerminalDriver.swift */,
+					B1000000000000000000013 /* ITermDriver.swift */,
 			);
 			path = TerminalSessions;
 			sourceTree = "<group>";
@@ -357,11 +368,12 @@
 		};
 		B60000000000000000000001 /* Terminal */ = {
 			isa = PBXGroup;
-			children = (
-				B3000000000000000000005 /* TerminalSessionControllerTests.swift */,
-				B3000000000000000000006 /* AppleTerminalDriverTests.swift */,
-				B3000000000000000000007 /* ITermDriverTests.swift */,
-			);
+				children = (
+					B3000000000000000000005 /* TerminalSessionControllerTests.swift */,
+					B3000000000000000000006 /* AppleTerminalDriverTests.swift */,
+					B3000000000000000000007 /* ITermDriverTests.swift */,
+					D30000000000000000000001 /* TerminalSessionPayloadMapperTests.swift */,
+				);
 			path = Terminal;
 			sourceTree = "<group>";
 		};
@@ -530,10 +542,13 @@
 				D20000000000000000000005 /* LocatorButtonStyle.swift in Sources */,
 				D20000000000000000000006 /* StatusLine.swift in Sources */,
 				D20000000000000000000007 /* MenuBarHeader.swift in Sources */,
-				D20000000000000000000008 /* MenuBarFooter.swift in Sources */,
-				D20000000000000000000009 /* MenuBarSignalKind.swift in Sources */,
-				D2000000000000000000000A /* MenuBarSection.swift in Sources */,
-			);
+					D20000000000000000000008 /* MenuBarFooter.swift in Sources */,
+					D20000000000000000000009 /* MenuBarSignalKind.swift in Sources */,
+					D2000000000000000000000A /* MenuBarSection.swift in Sources */,
+					D2000000000000000000000B /* TerminalSessionCandidates.swift in Sources */,
+					D2000000000000000000000C /* TerminalSessionFocusArguments.swift in Sources */,
+					D2000000000000000000000D /* TerminalSessionPayloadMapper.swift in Sources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A30000000000000000000050 /* Sources */ = {
@@ -547,10 +562,11 @@
 				B4000000000000000000005 /* TerminalSessionControllerTests.swift in Sources */,
 				B4000000000000000000006 /* AppleTerminalDriverTests.swift in Sources */,
 				B4000000000000000000007 /* ITermDriverTests.swift in Sources */,
-				B4000000000000000000008 /* OpenCodeLauncherTests.swift in Sources */,
-				B4000000000000000000009 /* MenuBarViewModelTests.swift in Sources */,
-				B400000000000000000000A /* TerminalScriptFixtures.swift in Sources */,
-			);
+					B4000000000000000000008 /* OpenCodeLauncherTests.swift in Sources */,
+					B4000000000000000000009 /* MenuBarViewModelTests.swift in Sources */,
+					B400000000000000000000A /* TerminalScriptFixtures.swift in Sources */,
+					D40000000000000000000001 /* TerminalSessionPayloadMapperTests.swift in Sources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
