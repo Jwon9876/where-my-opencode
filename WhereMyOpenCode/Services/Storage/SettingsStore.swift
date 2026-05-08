@@ -7,13 +7,16 @@ final class SettingsStore: ObservableObject {
 
     let settingsURL: URL
 
+    private let storage: JSONFileStore<AppSettings>
+
     init(settingsURL: URL = SettingsStore.defaultSettingsURL()) {
         self.settingsURL = settingsURL
+        self.storage = JSONFileStore(url: settingsURL)
 
         do {
-            settings = try Self.loadSettings(from: settingsURL)
+            settings = try storage.load()
             lastErrorMessage = nil
-        } catch SettingsStoreError.fileNotFound {
+        } catch JSONFileStoreError.fileNotFound {
             settings = AppSettings()
             lastErrorMessage = nil
         } catch {
@@ -39,35 +42,15 @@ final class SettingsStore: ObservableObject {
 
     private func saveSettings() {
         do {
-            try FileManager.default.createDirectory(
-                at: settingsURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(settings)
-            try data.write(to: settingsURL, options: .atomic)
+            try storage.save(settings)
             lastErrorMessage = nil
         } catch {
             lastErrorMessage = "Could not save settings."
         }
     }
 
-    private static func loadSettings(from url: URL) throws -> AppSettings {
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            throw SettingsStoreError.fileNotFound
-        }
-
-        let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(AppSettings.self, from: data)
-    }
-
     private static func defaultSettingsURL() -> URL {
-        FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("where-my-opencode", isDirectory: true)
-            .appendingPathComponent("settings.json")
+        AppSupportPaths.file(named: "settings.json")
     }
 
     private func normalizedOptionalPath(_ path: String?) -> String? {
@@ -77,8 +60,4 @@ final class SettingsStore: ObservableObject {
 
         return (path as NSString).standardizingPath
     }
-}
-
-private enum SettingsStoreError: Error {
-    case fileNotFound
 }

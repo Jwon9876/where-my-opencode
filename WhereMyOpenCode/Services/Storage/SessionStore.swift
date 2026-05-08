@@ -8,6 +8,7 @@ final class SessionStore: ObservableObject {
     let sessionsURL: URL
 
     private let maxStoredSessions: Int
+    private let storage: JSONFileStore<[TrackedSession]>
 
     init(
         sessionsURL: URL = SessionStore.defaultSessionsURL(),
@@ -15,11 +16,12 @@ final class SessionStore: ObservableObject {
     ) {
         self.sessionsURL = sessionsURL
         self.maxStoredSessions = maxStoredSessions
+        self.storage = JSONFileStore(url: sessionsURL)
 
         do {
-            sessions = try Self.loadSessions(from: sessionsURL)
+            sessions = try storage.load()
             lastErrorMessage = nil
-        } catch SessionStoreError.fileNotFound {
+        } catch JSONFileStoreError.fileNotFound {
             sessions = []
             lastErrorMessage = nil
         } catch {
@@ -75,35 +77,15 @@ final class SessionStore: ObservableObject {
 
     private func saveSessions() {
         do {
-            try FileManager.default.createDirectory(
-                at: sessionsURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(sessions)
-            try data.write(to: sessionsURL, options: .atomic)
+            try storage.save(sessions)
             lastErrorMessage = nil
         } catch {
             lastErrorMessage = "Could not save session history."
         }
     }
 
-    private static func loadSessions(from url: URL) throws -> [TrackedSession] {
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            throw SessionStoreError.fileNotFound
-        }
-
-        let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode([TrackedSession].self, from: data)
-    }
-
     private static func defaultSessionsURL() -> URL {
-        FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("where-my-opencode", isDirectory: true)
-            .appendingPathComponent("sessions.json")
+        AppSupportPaths.file(named: "sessions.json")
     }
 
     private static func sortMostRecentFirst(lhs: TrackedSession, rhs: TrackedSession) -> Bool {
@@ -113,8 +95,4 @@ final class SessionStore: ObservableObject {
 
         return lhs.openedAt > rhs.openedAt
     }
-}
-
-private enum SessionStoreError: Error {
-    case fileNotFound
 }

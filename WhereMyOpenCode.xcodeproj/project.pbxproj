@@ -41,6 +41,8 @@
 		B2000000000000000000020 /* AllProjectsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000020 /* AllProjectsSection.swift */; };
 		B2000000000000000000021 /* EmptyStateText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000021 /* EmptyStateText.swift */; };
 		B2000000000000000000022 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000022 /* SettingsView.swift */; };
+		D20000000000000000000001 /* AppSupportPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000001 /* AppSupportPaths.swift */; };
+		D20000000000000000000002 /* JSONFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000002 /* JSONFileStore.swift */; };
 		D20000000000000000000003 /* RadarPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000003 /* RadarPalette.swift */; };
 		D20000000000000000000004 /* LocatorMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000004 /* LocatorMark.swift */; };
 		D20000000000000000000005 /* LocatorButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000005 /* LocatorButtonStyle.swift */; };
@@ -113,6 +115,8 @@
 		B1000000000000000000020 /* AllProjectsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllProjectsSection.swift; sourceTree = "<group>"; };
 		B1000000000000000000021 /* EmptyStateText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateText.swift; sourceTree = "<group>"; };
 		B1000000000000000000022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D10000000000000000000001 /* AppSupportPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSupportPaths.swift; sourceTree = "<group>"; };
+		D10000000000000000000002 /* JSONFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONFileStore.swift; sourceTree = "<group>"; };
 		D10000000000000000000003 /* RadarPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadarPalette.swift; sourceTree = "<group>"; };
 		D10000000000000000000004 /* LocatorMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorMark.swift; sourceTree = "<group>"; };
 		D10000000000000000000005 /* LocatorButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorButtonStyle.swift; sourceTree = "<group>"; };
@@ -237,6 +241,8 @@
 		B70000000000000000000007 /* Storage */ = {
 			isa = PBXGroup;
 			children = (
+				D10000000000000000000001 /* AppSupportPaths.swift */,
+				D10000000000000000000002 /* JSONFileStore.swift */,
 				B1000000000000000000004 /* SettingsStore.swift */,
 				B1000000000000000000008 /* SessionStore.swift */,
 			);
@@ -517,6 +523,8 @@
 				B2000000000000000000020 /* AllProjectsSection.swift in Sources */,
 				B2000000000000000000021 /* EmptyStateText.swift in Sources */,
 				B2000000000000000000022 /* SettingsView.swift in Sources */,
+				D20000000000000000000001 /* AppSupportPaths.swift in Sources */,
+				D20000000000000000000002 /* JSONFileStore.swift in Sources */,
 				D20000000000000000000003 /* RadarPalette.swift in Sources */,
 				D20000000000000000000004 /* LocatorMark.swift in Sources */,
 				D20000000000000000000005 /* LocatorButtonStyle.swift in Sources */,
