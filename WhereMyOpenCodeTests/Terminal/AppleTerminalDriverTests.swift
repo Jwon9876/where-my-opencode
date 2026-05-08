@@ -26,17 +26,23 @@ final class AppleTerminalDriverTests: XCTestCase {
             terminalApp: .appleTerminal
         )
         var capturedScript = ""
-        let controller = AppleTerminalDriver { source in
-            capturedScript = source
+        var raisedMarkers: [String] = []
+        let controller = AppleTerminalDriver(
+            runAppleScript: { source in
+                capturedScript = source
 
-            return """
-            found=true
-            marker=\(latestSession.marker)
-            terminalWindowID=7
-            terminalTabTTY=/dev/ttys007
-            terminalCustomTitle=\(latestSession.terminalTitle)
-            """
-        }
+                return """
+                found=true
+                marker=\(latestSession.marker)
+                terminalWindowID=7
+                terminalTabTTY=/dev/ttys007
+                terminalCustomTitle=\(latestSession.terminalTitle)
+                """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
+            }
+        )
 
         let result = try controller.focusFirstRunningSession(from: [oldSession, latestSession])
 
@@ -54,6 +60,7 @@ final class AppleTerminalDriverTests: XCTestCase {
         let latestMarkerRange = try XCTUnwrap(capturedScript.range(of: latestSession.marker))
         let oldMarkerRange = try XCTUnwrap(capturedScript.range(of: oldSession.marker))
         XCTAssertTrue(latestMarkerRange.lowerBound < oldMarkerRange.lowerBound)
+        XCTAssertEqual(raisedMarkers, [latestSession.marker])
     }
 
     func testAppleTerminalDriverReturnsRunningSessionsFromInventoryPayload() throws {
@@ -172,30 +179,40 @@ final class AppleTerminalDriverTests: XCTestCase {
             terminalCustomTitle: "WhereMyOpenCode:session-123 Demo",
             launchedAt: Date(timeIntervalSince1970: 400)
         )
-        let controller = AppleTerminalDriver { source in
-            XCTAssertTrue(source.contains("terminalWindowID is expectedWindowID and terminalTTY is expectedTTY"))
-            XCTAssertTrue(source.contains("\"42\""))
-            XCTAssertTrue(source.contains("\"/dev/ttys042\""))
-            XCTAssertTrue(source.contains("my raiseWindowMatching(\"Terminal\", markerText)"))
-            XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
-            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
-            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
-            XCTAssertFalse(source.contains("raiseSelectedWindow"))
-            XCTAssertFalse(source.contains("\n                            activate"))
+        var raisedMarkers: [String] = []
+        let controller = AppleTerminalDriver(
+            runAppleScript: { source in
+                XCTAssertTrue(source.contains("terminalWindowID is expectedWindowID and terminalTTY is expectedTTY"))
+                XCTAssertTrue(source.contains("\"42\""))
+                XCTAssertTrue(source.contains("\"/dev/ttys042\""))
+                XCTAssertTrue(source.contains("my raiseWindowMatching(\"Terminal\", markerText)"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXMain\" of axWindow to true"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXFocused\" of axWindow to true"))
+                XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
+                XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+                XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+                XCTAssertFalse(source.contains("raiseSelectedWindow"))
+                XCTAssertFalse(source.contains("set frontmost to true"))
+                XCTAssertFalse(source.contains("\n                            activate"))
 
-            return """
-            found=true
-            marker=\(session.marker)
-            terminalWindowID=42
-            terminalTabTTY=/dev/ttys042
-            terminalCustomTitle=OpenCode
-            """
-        }
+                return """
+                found=true
+                marker=\(session.marker)
+                terminalWindowID=42
+                terminalTabTTY=/dev/ttys042
+                terminalCustomTitle=OpenCode
+                """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
+            }
+        )
 
         let result = try controller.focusFirstRunningSession(from: [session])
 
         XCTAssertEqual(result?.sessionID, "session-123")
         XCTAssertEqual(result?.terminalCustomTitle, "OpenCode")
+        XCTAssertEqual(raisedMarkers, [session.marker])
     }
 
     func testAppleTerminalDriverFocusesMultipleRunningSessions() throws {
@@ -217,36 +234,46 @@ final class AppleTerminalDriverTests: XCTestCase {
             terminalTabTTY: "/dev/ttys042",
             terminalCustomTitle: "WhereMyOpenCode:second-session App"
         )
-        let controller = AppleTerminalDriver { source in
-            XCTAssertTrue(source.contains("set payloadParts to {}"))
-            XCTAssertTrue(source.contains("set end of payloadParts"))
-            XCTAssertTrue(source.contains("set candidateMatched to true"))
-            XCTAssertTrue(source.contains("set selected tab of terminalWindow to terminalTab"))
-            XCTAssertTrue(source.contains("my raiseWindowMatching(\"Terminal\", markerText)"))
-            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
-            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
-            XCTAssertFalse(source.contains("raiseSelectedWindow"))
-            XCTAssertFalse(source.contains("activate"))
+        var raisedMarkers: [String] = []
+        let controller = AppleTerminalDriver(
+            runAppleScript: { source in
+                XCTAssertTrue(source.contains("set payloadParts to {}"))
+                XCTAssertTrue(source.contains("set end of payloadParts"))
+                XCTAssertTrue(source.contains("set candidateMatched to true"))
+                XCTAssertTrue(source.contains("set selected tab of terminalWindow to terminalTab"))
+                XCTAssertTrue(source.contains("my raiseWindowMatching(\"Terminal\", markerText)"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXMain\" of axWindow to true"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXFocused\" of axWindow to true"))
+                XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+                XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+                XCTAssertFalse(source.contains("raiseSelectedWindow"))
+                XCTAssertFalse(source.contains("set frontmost to true"))
+                XCTAssertFalse(source.contains("activate"))
 
-            return """
-            found=true
-            ---
-            marker=\(firstSession.marker)
-            terminalWindowID=41
-            terminalTabTTY=/dev/ttys041
-            terminalCustomTitle=OpenCode
-            ---
-            marker=\(secondSession.marker)
-            terminalWindowID=42
-            terminalTabTTY=/dev/ttys042
-            terminalCustomTitle=OpenCode
-            """
-        }
+                return """
+                found=true
+                ---
+                marker=\(firstSession.marker)
+                terminalWindowID=41
+                terminalTabTTY=/dev/ttys041
+                terminalCustomTitle=OpenCode
+                ---
+                marker=\(secondSession.marker)
+                terminalWindowID=42
+                terminalTabTTY=/dev/ttys042
+                terminalCustomTitle=OpenCode
+                """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
+            }
+        )
 
         let result = try controller.focusRunningSessions([firstSession, secondSession])
 
         XCTAssertEqual(result.map(\.sessionID), ["first-session", "second-session"])
         XCTAssertEqual(result.map(\.terminalWindowID), [41, 42])
+        XCTAssertEqual(raisedMarkers, [firstSession.marker, secondSession.marker])
     }
 
     func testAppleTerminalDriverReturnsEmptyRunningSessionsWhenTerminalDoesNotMatch() throws {
@@ -384,9 +411,12 @@ final class AppleTerminalDriverTests: XCTestCase {
         XCTAssertFalse(script.contains(unrelatedSession.marker))
 
         XCTAssertEqual(occurrences(of: "my raiseWindowMatching(\"Terminal\", markerText)", in: script), 1)
+        XCTAssertEqual(occurrences(of: "set value of attribute \"AXMain\" of axWindow to true", in: script), 1)
+        XCTAssertEqual(occurrences(of: "set value of attribute \"AXFocused\" of axWindow to true", in: script), 1)
         XCTAssertEqual(occurrences(of: "perform action \"AXRaise\" of axWindow", in: script), 1)
         XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
         XCTAssertFalse(script.contains("raiseSelectedWindow"))
+        XCTAssertFalse(script.contains("set frontmost to true"))
         XCTAssertFalse(script.contains("activate"))
     }
 }

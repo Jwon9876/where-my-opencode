@@ -1,18 +1,22 @@
 struct ITermDriver: TerminalSessionDriver {
     typealias ScriptRunner = (String) throws -> String
+    typealias WindowRaiser = (TerminalApp, String) -> Void
 
     let terminalApp: TerminalApp = .iTerm2
 
     private let runAppleScript: ScriptRunner
+    private let raiseWindow: WindowRaiser
 
     init(
         runAppleScript: @escaping ScriptRunner = AppleScriptRunner(
             preparationFailureMessage: "Could not prepare the iTerm2 focus command.",
             executionFailureFallbackMessage: "iTerm2 did not accept the focus command.",
             makeError: { TerminalSessionError.appleScriptFailed($0) }
-        ).run
+        ).run,
+        raiseWindow: @escaping WindowRaiser = TerminalWindowRaiser.raise
     ) {
         self.runAppleScript = runAppleScript
+        self.raiseWindow = raiseWindow
     }
 
     func focusFirstRunningSession(from sessions: [TrackedSession]) throws -> RunningTerminalSession? {
@@ -31,8 +35,10 @@ struct ITermDriver: TerminalSessionDriver {
                 ttys: arguments.ttys
             )
         )
+        let runningSessions = runningTerminalSessions(payload: payload, sessions: candidateSessions)
+        runningSessions.forEach { raiseWindow(.iTerm2, $0.marker) }
 
-        return runningTerminalSessions(payload: payload, sessions: candidateSessions).first
+        return runningSessions.first
     }
 
     func focusRunningSessions(_ sessions: [RunningTerminalSession]) throws -> [RunningTerminalSession] {
@@ -51,8 +57,10 @@ struct ITermDriver: TerminalSessionDriver {
                 ttys: arguments.ttys
             )
         )
+        let runningSessions = runningTerminalSessions(payload: payload, runningSessions: candidateSessions)
+        runningSessions.forEach { raiseWindow(.iTerm2, $0.marker) }
 
-        return runningTerminalSessions(payload: payload, runningSessions: candidateSessions)
+        return runningSessions
     }
 
     func runningSessions(from sessions: [TrackedSession]) throws -> [RunningTerminalSession] {

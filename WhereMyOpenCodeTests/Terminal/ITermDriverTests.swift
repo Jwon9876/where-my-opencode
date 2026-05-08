@@ -147,30 +147,39 @@ final class ITermDriverTests: XCTestCase {
             terminalCustomTitle: "WhereMyOpenCode:session-123 Demo",
             launchedAt: Date(timeIntervalSince1970: 400)
         )
-        let controller = ITermDriver { source in
-            XCTAssertTrue(source.contains("terminalSessionID is expectedSessionID"))
-            XCTAssertTrue(source.contains("\"iterm-session-123\""))
-            XCTAssertTrue(source.contains("\"42\""))
-            XCTAssertTrue(source.contains("\"/dev/ttys042\""))
-            XCTAssertTrue(source.contains("select terminalSession"))
-            XCTAssertTrue(source.contains("select terminalTab"))
-            XCTAssertTrue(source.contains("select terminalWindow"))
-            XCTAssertTrue(source.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
-            XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
-            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
-            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
-            XCTAssertFalse(source.contains("raiseSelectedWindow"))
-            XCTAssertFalse(source.contains("\n                                activate"))
+        var raisedMarkers: [String] = []
+        let controller = ITermDriver(
+            runAppleScript: { source in
+                XCTAssertTrue(source.contains("terminalSessionID is expectedSessionID"))
+                XCTAssertTrue(source.contains("\"iterm-session-123\""))
+                XCTAssertTrue(source.contains("\"42\""))
+                XCTAssertTrue(source.contains("\"/dev/ttys042\""))
+                XCTAssertTrue(source.contains("select terminalSession"))
+                XCTAssertTrue(source.contains("select terminalTab"))
+                XCTAssertTrue(source.contains("select terminalWindow"))
+                XCTAssertTrue(source.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXMain\" of axWindow to true"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXFocused\" of axWindow to true"))
+                XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
+                XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+                XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+                XCTAssertFalse(source.contains("raiseSelectedWindow"))
+                XCTAssertFalse(source.contains("set frontmost to true"))
+                XCTAssertFalse(source.contains("\n                                activate"))
 
-            return """
-            found=true
-            marker=\(session.marker)
-            terminalWindowID=42
-            terminalSessionID=iterm-session-123
-            terminalTabTTY=/dev/ttys042
-            terminalCustomTitle=OpenCode
-            """
-        }
+                return """
+                found=true
+                marker=\(session.marker)
+                terminalWindowID=42
+                terminalSessionID=iterm-session-123
+                terminalTabTTY=/dev/ttys042
+                terminalCustomTitle=OpenCode
+                """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
+            }
+        )
 
         let result = try controller.focusFirstRunningSession(from: [session])
 
@@ -178,6 +187,7 @@ final class ITermDriverTests: XCTestCase {
         XCTAssertEqual(result?.terminalApp, .iTerm2)
         XCTAssertEqual(result?.terminalSessionID, "iterm-session-123")
         XCTAssertEqual(result?.terminalCustomTitle, "OpenCode")
+        XCTAssertEqual(raisedMarkers, [session.marker])
     }
 
     func testITermDriverFocusesMultipleRunningSessions() throws {
@@ -199,40 +209,50 @@ final class ITermDriverTests: XCTestCase {
             terminalTabTTY: "/dev/ttys052",
             terminalCustomTitle: "OpenCode"
         )
-        let controller = ITermDriver { source in
-            XCTAssertTrue(source.contains("set payloadParts to {}"))
-            XCTAssertTrue(source.contains("set end of payloadParts"))
-            XCTAssertTrue(source.contains("set candidateMatched to true"))
-            XCTAssertTrue(source.contains("select terminalSession"))
-            XCTAssertTrue(source.contains("select terminalWindow"))
-            XCTAssertTrue(source.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
-            XCTAssertTrue(source.contains("if windowTitle contains identifier"))
-            XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
-            XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
-            XCTAssertFalse(source.contains("raiseSelectedWindow"))
-            XCTAssertFalse(source.contains("activate"))
+        var raisedMarkers: [String] = []
+        let controller = ITermDriver(
+            runAppleScript: { source in
+                XCTAssertTrue(source.contains("set payloadParts to {}"))
+                XCTAssertTrue(source.contains("set end of payloadParts"))
+                XCTAssertTrue(source.contains("set candidateMatched to true"))
+                XCTAssertTrue(source.contains("select terminalSession"))
+                XCTAssertTrue(source.contains("select terminalWindow"))
+                XCTAssertTrue(source.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
+                XCTAssertTrue(source.contains("if windowTitle contains identifier"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXMain\" of axWindow to true"))
+                XCTAssertTrue(source.contains("set value of attribute \"AXFocused\" of axWindow to true"))
+                XCTAssertTrue(source.contains("perform action \"AXRaise\" of axWindow"))
+                XCTAssertFalse(source.contains("perform action \"AXRaise\" of window 1"))
+                XCTAssertFalse(source.contains("raiseSelectedWindow"))
+                XCTAssertFalse(source.contains("set frontmost to true"))
+                XCTAssertFalse(source.contains("activate"))
 
-            return """
-            found=true
-            ---
-            marker=\(firstSession.marker)
-            terminalWindowID=51
-            terminalSessionID=iterm-first
-            terminalTabTTY=/dev/ttys051
-            terminalCustomTitle=OpenCode
-            ---
-            marker=\(secondSession.marker)
-            terminalWindowID=52
-            terminalSessionID=iterm-second
-            terminalTabTTY=/dev/ttys052
-            terminalCustomTitle=OpenCode
-            """
-        }
+                return """
+                found=true
+                ---
+                marker=\(firstSession.marker)
+                terminalWindowID=51
+                terminalSessionID=iterm-first
+                terminalTabTTY=/dev/ttys051
+                terminalCustomTitle=OpenCode
+                ---
+                marker=\(secondSession.marker)
+                terminalWindowID=52
+                terminalSessionID=iterm-second
+                terminalTabTTY=/dev/ttys052
+                terminalCustomTitle=OpenCode
+                """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
+            }
+        )
 
         let result = try controller.focusRunningSessions([firstSession, secondSession])
 
         XCTAssertEqual(result.map(\.sessionID), ["first-session", "second-session"])
         XCTAssertEqual(result.map(\.terminalSessionID), ["iterm-first", "iterm-second"])
+        XCTAssertEqual(raisedMarkers, [firstSession.marker, secondSession.marker])
     }
 
     func testITermDriverReturnsEmptyRunningSessionsWhenITermDoesNotMatch() throws {
@@ -358,9 +378,12 @@ final class ITermDriverTests: XCTestCase {
         XCTAssertFalse(script.contains(unrelatedSession.terminalSessionID ?? ""))
 
         XCTAssertEqual(occurrences(of: "my raiseWindowMatching(\"iTerm2\", markerText)", in: script), 1)
+        XCTAssertEqual(occurrences(of: "set value of attribute \"AXMain\" of axWindow to true", in: script), 1)
+        XCTAssertEqual(occurrences(of: "set value of attribute \"AXFocused\" of axWindow to true", in: script), 1)
         XCTAssertEqual(occurrences(of: "perform action \"AXRaise\" of axWindow", in: script), 1)
         XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
         XCTAssertFalse(script.contains("raiseSelectedWindow"))
+        XCTAssertFalse(script.contains("set frontmost to true"))
         XCTAssertFalse(script.contains("activate"))
     }
 }

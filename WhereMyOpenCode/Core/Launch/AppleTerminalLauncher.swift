@@ -1,16 +1,20 @@
 struct AppleTerminalLauncher {
     typealias ScriptRunner = (String) throws -> String
+    typealias WindowRaiser = (TerminalApp, String) -> Void
 
     private let runAppleScript: ScriptRunner
+    private let raiseWindow: WindowRaiser
 
     init(
         runAppleScript: @escaping ScriptRunner = AppleScriptRunner(
             preparationFailureMessage: "Could not prepare Terminal command.",
             executionFailureFallbackMessage: "Terminal did not accept the command.",
             makeError: { OpenCodeLauncherError.appleScriptFailed($0) }
-        ).run
+        ).run,
+        raiseWindow: @escaping WindowRaiser = TerminalWindowRaiser.raise
     ) {
         self.runAppleScript = runAppleScript
+        self.raiseWindow = raiseWindow
     }
 
     func launch(
@@ -29,7 +33,10 @@ struct AppleTerminalLauncher {
             )
         )
 
-        return OpenCodeLaunchResult.parse(sessionID: sessionID, payload: payload)
+        let result = OpenCodeLaunchResult.parse(sessionID: sessionID, payload: payload)
+        raiseLaunchedWindowIfNeeded(marker: marker, focusPolicy: focusPolicy)
+
+        return result
     }
 
     func script(
@@ -152,6 +159,15 @@ struct AppleTerminalLauncher {
             ""
         case .raiseLaunchedWindow:
             RaiseWindowHandler.source
+        }
+    }
+
+    private func raiseLaunchedWindowIfNeeded(marker: String, focusPolicy: OpenCodeLaunchFocusPolicy) {
+        switch focusPolicy {
+        case .none:
+            break
+        case .raiseLaunchedWindow:
+            raiseWindow(.appleTerminal, marker)
         }
     }
 }

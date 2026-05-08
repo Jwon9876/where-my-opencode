@@ -1,18 +1,22 @@
 struct AppleTerminalDriver: TerminalSessionDriver {
     typealias ScriptRunner = (String) throws -> String
+    typealias WindowRaiser = (TerminalApp, String) -> Void
 
     let terminalApp: TerminalApp = .appleTerminal
 
     private let runAppleScript: ScriptRunner
+    private let raiseWindow: WindowRaiser
 
     init(
         runAppleScript: @escaping ScriptRunner = AppleScriptRunner(
             preparationFailureMessage: "Could not prepare the Terminal focus command.",
             executionFailureFallbackMessage: "Terminal did not accept the focus command.",
             makeError: { TerminalSessionError.appleScriptFailed($0) }
-        ).run
+        ).run,
+        raiseWindow: @escaping WindowRaiser = TerminalWindowRaiser.raise
     ) {
         self.runAppleScript = runAppleScript
+        self.raiseWindow = raiseWindow
     }
 
     func focusFirstRunningSession(from sessions: [TrackedSession]) throws -> RunningTerminalSession? {
@@ -26,8 +30,10 @@ struct AppleTerminalDriver: TerminalSessionDriver {
         let payload = try runAppleScript(
             focusScript(markers: arguments.markers, windowIDs: arguments.windowIDs, ttys: arguments.ttys)
         )
+        let runningSessions = runningTerminalSessions(payload: payload, sessions: candidateSessions)
+        runningSessions.forEach { raiseWindow(.appleTerminal, $0.marker) }
 
-        return runningTerminalSessions(payload: payload, sessions: candidateSessions).first
+        return runningSessions.first
     }
 
     func focusRunningSessions(_ sessions: [RunningTerminalSession]) throws -> [RunningTerminalSession] {
@@ -41,8 +47,10 @@ struct AppleTerminalDriver: TerminalSessionDriver {
         let payload = try runAppleScript(
             focusScript(markers: arguments.markers, windowIDs: arguments.windowIDs, ttys: arguments.ttys)
         )
+        let runningSessions = runningTerminalSessions(payload: payload, runningSessions: candidateSessions)
+        runningSessions.forEach { raiseWindow(.appleTerminal, $0.marker) }
 
-        return runningTerminalSessions(payload: payload, runningSessions: candidateSessions)
+        return runningSessions
     }
 
     func runningSessions(from sessions: [TrackedSession]) throws -> [RunningTerminalSession] {

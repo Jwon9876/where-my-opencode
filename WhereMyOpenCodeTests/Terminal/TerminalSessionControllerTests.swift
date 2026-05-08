@@ -80,48 +80,54 @@ final class TerminalSessionControllerTests: XCTestCase {
             terminalApp: .appleTerminal
         )
         var appleScripts: [String] = []
-        let appleController = AppleTerminalDriver { source in
-            appleScripts.append(source)
+        var raisedMarkers: [String] = []
+        let appleController = AppleTerminalDriver(
+            runAppleScript: { source in
+                appleScripts.append(source)
 
-            if source.contains("markersToFind") {
-                XCTAssertTrue(source.contains(latestAppSession.marker))
-                XCTAssertTrue(source.contains(olderAppSession.marker))
-                XCTAssertFalse(source.contains(toolSession.marker))
+                if source.contains("markersToFind") {
+                    XCTAssertTrue(source.contains(latestAppSession.marker))
+                    XCTAssertTrue(source.contains(olderAppSession.marker))
+                    XCTAssertFalse(source.contains(toolSession.marker))
+
+                    return """
+                    found=true
+                    ---
+                    marker=\(latestAppSession.marker)
+                    terminalWindowID=9
+                    terminalTabTTY=/dev/ttys009
+                    terminalCustomTitle=OpenCode
+                    ---
+                    marker=\(olderAppSession.marker)
+                    terminalWindowID=7
+                    terminalTabTTY=/dev/ttys007
+                    terminalCustomTitle=OpenCode
+                    """
+                }
 
                 return """
                 found=true
                 ---
-                marker=\(latestAppSession.marker)
-                terminalWindowID=9
-                terminalTabTTY=/dev/ttys009
-                terminalCustomTitle=OpenCode
-                ---
                 marker=\(olderAppSession.marker)
                 terminalWindowID=7
                 terminalTabTTY=/dev/ttys007
-                terminalCustomTitle=OpenCode
+                terminalCustomTitle=\(olderAppSession.terminalTitle)
+                ---
+                marker=\(toolSession.marker)
+                terminalWindowID=8
+                terminalTabTTY=/dev/ttys008
+                terminalCustomTitle=\(toolSession.terminalTitle)
+                ---
+                marker=\(latestAppSession.marker)
+                terminalWindowID=9
+                terminalTabTTY=/dev/ttys009
+                terminalCustomTitle=\(latestAppSession.terminalTitle)
                 """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
             }
-
-            return """
-            found=true
-            ---
-            marker=\(olderAppSession.marker)
-            terminalWindowID=7
-            terminalTabTTY=/dev/ttys007
-            terminalCustomTitle=\(olderAppSession.terminalTitle)
-            ---
-            marker=\(toolSession.marker)
-            terminalWindowID=8
-            terminalTabTTY=/dev/ttys008
-            terminalCustomTitle=\(toolSession.terminalTitle)
-            ---
-            marker=\(latestAppSession.marker)
-            terminalWindowID=9
-            terminalTabTTY=/dev/ttys009
-            terminalCustomTitle=\(latestAppSession.terminalTitle)
-            """
-        }
+        )
         let iTermController = ITermDriver { _ in
             XCTFail("iTerm2 should not be asked to focus Apple Terminal sessions.")
             return TerminalScriptFixtures.notFound
@@ -133,6 +139,7 @@ final class TerminalSessionControllerTests: XCTestCase {
         XCTAssertEqual(result.map(\.sessionID), ["latest-app", "older-app"])
         XCTAssertEqual(result.map(\.terminalWindowID), [9, 7])
         XCTAssertEqual(appleScripts.count, 2)
+        XCTAssertEqual(raisedMarkers, [latestAppSession.marker, olderAppSession.marker])
     }
 
     func testTerminalSessionControllerFocusesOnlyRequestedLiveSession() throws {
@@ -154,27 +161,34 @@ final class TerminalSessionControllerTests: XCTestCase {
             terminalTabTTY: "/dev/ttys013",
             terminalCustomTitle: "OpenCode"
         )
-        let appleController = AppleTerminalDriver { source in
-            XCTAssertTrue(source.contains(requestedSession.marker))
-            XCTAssertFalse(source.contains(siblingSession.marker))
+        var raisedMarkers: [String] = []
+        let appleController = AppleTerminalDriver(
+            runAppleScript: { source in
+                XCTAssertTrue(source.contains(requestedSession.marker))
+                XCTAssertFalse(source.contains(siblingSession.marker))
 
-            return """
-            found=true
-            ---
-            marker=\(requestedSession.marker)
-            terminalWindowID=12
-            terminalTabTTY=/dev/ttys012
-            terminalCustomTitle=OpenCode
-            """
-        }
+                return """
+                found=true
+                ---
+                marker=\(requestedSession.marker)
+                terminalWindowID=12
+                terminalTabTTY=/dev/ttys012
+                terminalCustomTitle=OpenCode
+                """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
+            }
+        )
         let controller = TerminalSessionController(drivers: [appleController, ITermDriver()])
 
         let result = try controller.focusRunningSessions([requestedSession])
 
         XCTAssertEqual(result.map(\.sessionID), ["requested-session"])
+        XCTAssertEqual(raisedMarkers, [requestedSession.marker])
     }
 
-    func testRaiseWindowMatchingHandlerOnlyRaisesByTitleMatch() {
+    func testRaiseWindowMatchingHandlerOnlyRaisesByTitleMatch() throws {
         let handler = RaiseWindowHandler.source
 
         XCTAssertTrue(handler.contains("on raiseWindowMatching(processName, identifier)"))
@@ -182,10 +196,15 @@ final class TerminalSessionControllerTests: XCTestCase {
         XCTAssertTrue(handler.contains("repeat with axWindow in windows"))
         XCTAssertTrue(handler.contains("set windowTitle to title of axWindow"))
         XCTAssertTrue(handler.contains("if windowTitle contains identifier"))
+        XCTAssertTrue(handler.contains("set value of attribute \"AXMain\" of axWindow to true"))
+        XCTAssertTrue(handler.contains("set value of attribute \"AXFocused\" of axWindow to true"))
         XCTAssertTrue(handler.contains("perform action \"AXRaise\" of axWindow"))
+        let axMainRange = try XCTUnwrap(handler.range(of: "set value of attribute \"AXMain\" of axWindow to true"))
+        let axRaiseRange = try XCTUnwrap(handler.range(of: "perform action \"AXRaise\" of axWindow"))
+        XCTAssertLessThan(axMainRange.lowerBound, axRaiseRange.lowerBound)
         XCTAssertFalse(handler.contains("perform action \"AXRaise\" of window 1"))
-        XCTAssertFalse(handler.contains("activate"))
         XCTAssertFalse(handler.contains("set frontmost to true"))
+        XCTAssertFalse(handler.contains("activate"))
     }
 
     func testTerminalSessionControllerFocusProjectSessionsScriptOmitsOtherProjectMarkers() throws {
@@ -224,60 +243,66 @@ final class TerminalSessionControllerTests: XCTestCase {
         )
 
         var iTermScripts: [String] = []
+        var raisedMarkers: [String] = []
         let appleController = AppleTerminalDriver { _ in
             TerminalScriptFixtures.notFound
         }
-        let iTermController = ITermDriver { source in
-            iTermScripts.append(source)
+        let iTermController = ITermDriver(
+            runAppleScript: { source in
+                iTermScripts.append(source)
 
-            if source.contains("markersToFind") {
-                XCTAssertTrue(source.contains(projectAOlder.marker))
-                XCTAssertTrue(source.contains(projectALatest.marker))
-                XCTAssertFalse(
-                    source.contains(projectBSession.marker),
-                    "Project B's marker must not appear in the focus script for Project A."
-                )
-                XCTAssertFalse(
-                    source.contains(projectBSession.terminalSessionID ?? "<missing>"),
-                    "Project B's terminal session ID must not appear in Project A's focus script."
-                )
+                if source.contains("markersToFind") {
+                    XCTAssertTrue(source.contains(projectAOlder.marker))
+                    XCTAssertTrue(source.contains(projectALatest.marker))
+                    XCTAssertFalse(
+                        source.contains(projectBSession.marker),
+                        "Project B's marker must not appear in the focus script for Project A."
+                    )
+                    XCTAssertFalse(
+                        source.contains(projectBSession.terminalSessionID ?? "<missing>"),
+                        "Project B's terminal session ID must not appear in Project A's focus script."
+                    )
+
+                    return """
+                    found=true
+                    ---
+                    marker=\(projectALatest.marker)
+                    terminalWindowID=32
+                    terminalSessionID=iterm-project-a-latest
+                    terminalTabTTY=/dev/ttys032
+                    terminalCustomTitle=OpenCode
+                    ---
+                    marker=\(projectAOlder.marker)
+                    terminalWindowID=31
+                    terminalSessionID=iterm-project-a-older
+                    terminalTabTTY=/dev/ttys031
+                    terminalCustomTitle=OpenCode
+                    """
+                }
 
                 return """
                 found=true
                 ---
-                marker=\(projectALatest.marker)
+                terminalWindowID=31
+                terminalSessionID=iterm-project-a-older
+                terminalTabTTY=/dev/ttys031
+                terminalCustomTitle=OpenCode
+                ---
                 terminalWindowID=32
                 terminalSessionID=iterm-project-a-latest
                 terminalTabTTY=/dev/ttys032
                 terminalCustomTitle=OpenCode
                 ---
-                marker=\(projectAOlder.marker)
-                terminalWindowID=31
-                terminalSessionID=iterm-project-a-older
-                terminalTabTTY=/dev/ttys031
+                terminalWindowID=33
+                terminalSessionID=iterm-project-b
+                terminalTabTTY=/dev/ttys033
                 terminalCustomTitle=OpenCode
                 """
+            },
+            raiseWindow: { _, marker in
+                raisedMarkers.append(marker)
             }
-
-            return """
-            found=true
-            ---
-            terminalWindowID=31
-            terminalSessionID=iterm-project-a-older
-            terminalTabTTY=/dev/ttys031
-            terminalCustomTitle=OpenCode
-            ---
-            terminalWindowID=32
-            terminalSessionID=iterm-project-a-latest
-            terminalTabTTY=/dev/ttys032
-            terminalCustomTitle=OpenCode
-            ---
-            terminalWindowID=33
-            terminalSessionID=iterm-project-b
-            terminalTabTTY=/dev/ttys033
-            terminalCustomTitle=OpenCode
-            """
-        }
+        )
         let controller = TerminalSessionController(drivers: [appleController, iTermController])
 
         let result = try controller.focusRunningSessions(from: [projectAOlder, projectALatest])
@@ -288,7 +313,11 @@ final class TerminalSessionControllerTests: XCTestCase {
 
         let focusScript = try XCTUnwrap(iTermScripts.first { $0.contains("markersToFind") })
         XCTAssertTrue(focusScript.contains("my raiseWindowMatching(\"iTerm2\", markerText)"))
+        XCTAssertTrue(focusScript.contains("set value of attribute \"AXMain\" of axWindow to true"))
+        XCTAssertTrue(focusScript.contains("set value of attribute \"AXFocused\" of axWindow to true"))
         XCTAssertFalse(focusScript.contains("perform action \"AXRaise\" of window 1"))
+        XCTAssertFalse(focusScript.contains("set frontmost to true"))
         XCTAssertFalse(focusScript.contains(projectBSession.marker))
+        XCTAssertEqual(raisedMarkers, [projectALatest.marker, projectAOlder.marker])
     }
 }

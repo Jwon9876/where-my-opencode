@@ -35,10 +35,13 @@ final class OpenCodeLauncherTests: XCTestCase {
         XCTAssertFalse(script.contains("repeat 12 times"))
         XCTAssertTrue(script.contains("my raiseWindowMatching(\"Terminal\", \"WhereMyOpenCode:abc\")"))
         XCTAssertTrue(script.contains("if windowTitle contains identifier"))
+        XCTAssertTrue(script.contains("set value of attribute \"AXMain\" of axWindow to true"))
+        XCTAssertTrue(script.contains("set value of attribute \"AXFocused\" of axWindow to true"))
         XCTAssertTrue(script.contains("perform action \"AXRaise\" of axWindow"))
         XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
         XCTAssertFalse(script.contains("raiseSelectedWindow"))
         XCTAssertTrue(script.contains("set selected tab of launchedWindow to launchedTab"))
+        XCTAssertFalse(script.contains("set frontmost to true"))
         XCTAssertFalse(script.contains("activate"))
         XCTAssertTrue(script.contains("WhereMyOpenCode:abc \\\"Demo\\\""))
     }
@@ -55,6 +58,9 @@ final class OpenCodeLauncherTests: XCTestCase {
         XCTAssertFalse(script.contains("raiseSelectedWindow"))
         XCTAssertFalse(script.contains("raiseWindowMatching"))
         XCTAssertFalse(script.contains("AXRaise"))
+        XCTAssertFalse(script.contains("AXMain"))
+        XCTAssertFalse(script.contains("AXFocused"))
+        XCTAssertFalse(script.contains("set frontmost to true"))
         XCTAssertFalse(script.contains("set selected tab of launchedWindow to launchedTab"))
     }
 
@@ -82,6 +88,8 @@ final class OpenCodeLauncherTests: XCTestCase {
         XCTAssertTrue(script.contains("select launchedWindow"))
         XCTAssertTrue(script.contains("my raiseWindowMatching(\"iTerm2\", \"WhereMyOpenCode:abc\")"))
         XCTAssertTrue(script.contains("if windowTitle contains identifier"))
+        XCTAssertTrue(script.contains("set value of attribute \"AXMain\" of axWindow to true"))
+        XCTAssertTrue(script.contains("set value of attribute \"AXFocused\" of axWindow to true"))
         XCTAssertTrue(script.contains("perform action \"AXRaise\" of axWindow"))
         XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
         XCTAssertFalse(script.contains("raiseSelectedWindow"))
@@ -89,6 +97,7 @@ final class OpenCodeLauncherTests: XCTestCase {
         XCTAssertTrue(script.contains("terminalSessionID=\" & launchedSessionID"))
         XCTAssertFalse(script.contains("whereMyOpenCodeMarker"))
         XCTAssertFalse(script.contains("terminalMarker="))
+        XCTAssertFalse(script.contains("set frontmost to true"))
         XCTAssertFalse(script.contains("activate"))
         XCTAssertTrue(script.contains("WhereMyOpenCode:abc Demo"))
     }
@@ -105,6 +114,9 @@ final class OpenCodeLauncherTests: XCTestCase {
         XCTAssertFalse(script.contains("raiseSelectedWindow"))
         XCTAssertFalse(script.contains("raiseWindowMatching"))
         XCTAssertFalse(script.contains("AXRaise"))
+        XCTAssertFalse(script.contains("AXMain"))
+        XCTAssertFalse(script.contains("AXFocused"))
+        XCTAssertFalse(script.contains("set frontmost to true"))
         XCTAssertFalse(script.contains("select launchedSession"))
         XCTAssertFalse(script.contains("select launchedWindow"))
     }
@@ -164,9 +176,12 @@ final class OpenCodeLauncherTests: XCTestCase {
 
         for script in [appleScript, iTermScript] {
             XCTAssertTrue(script.contains("if windowTitle contains identifier"))
+            XCTAssertTrue(script.contains("set value of attribute \"AXMain\" of axWindow to true"))
+            XCTAssertTrue(script.contains("set value of attribute \"AXFocused\" of axWindow to true"))
             XCTAssertTrue(script.contains("perform action \"AXRaise\" of axWindow"))
             XCTAssertFalse(script.contains("perform action \"AXRaise\" of window 1"))
             XCTAssertFalse(script.contains("raiseSelectedWindow"))
+            XCTAssertFalse(script.contains("set frontmost to true"))
             XCTAssertFalse(script.contains("activate"))
         }
 
@@ -191,9 +206,123 @@ final class OpenCodeLauncherTests: XCTestCase {
         for script in [appleScript, iTermScript] {
             XCTAssertFalse(script.contains("activate"))
             XCTAssertFalse(script.contains("AXRaise"))
+            XCTAssertFalse(script.contains("AXMain"))
+            XCTAssertFalse(script.contains("AXFocused"))
             XCTAssertFalse(script.contains("raiseWindowMatching"))
             XCTAssertFalse(script.contains("raiseSelectedWindow"))
             XCTAssertFalse(script.contains("set frontmost to true"))
         }
+    }
+
+    func testAppleTerminalLauncherRaisesWindowAfterFocusedLaunch() throws {
+        var raisedApps: [TerminalApp] = []
+        var raisedMarkers: [String] = []
+        let launcher = AppleTerminalLauncher(
+            runAppleScript: { _ in
+                """
+                terminalWindowID=100
+                terminalTabTTY=/dev/ttys123
+                terminalCustomTitle=WhereMyOpenCode:abc Demo
+                """
+            },
+            raiseWindow: { app, marker in
+                raisedApps.append(app)
+                raisedMarkers.append(marker)
+            }
+        )
+
+        _ = try launcher.launch(
+            sessionID: "session-123",
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .raiseLaunchedWindow
+        )
+
+        XCTAssertEqual(raisedApps, [.appleTerminal])
+        XCTAssertEqual(raisedMarkers, ["WhereMyOpenCode:abc"])
+    }
+
+    func testAppleTerminalLauncherDoesNotRaiseWindowWithoutExplicitFocus() throws {
+        var didRaiseWindow = false
+        let launcher = AppleTerminalLauncher(
+            runAppleScript: { _ in
+                """
+                terminalWindowID=100
+                terminalTabTTY=/dev/ttys123
+                terminalCustomTitle=WhereMyOpenCode:abc Demo
+                """
+            },
+            raiseWindow: { _, _ in
+                didRaiseWindow = true
+            }
+        )
+
+        _ = try launcher.launch(
+            sessionID: "session-123",
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .none
+        )
+
+        XCTAssertFalse(didRaiseWindow)
+    }
+
+    func testITermLauncherRaisesWindowAfterFocusedLaunch() throws {
+        var raisedApps: [TerminalApp] = []
+        var raisedMarkers: [String] = []
+        let launcher = ITermLauncher(
+            runAppleScript: { _ in
+                """
+                terminalWindowID=100
+                terminalSessionID=iterm-session-123
+                terminalTabTTY=/dev/ttys123
+                terminalCustomTitle=WhereMyOpenCode:abc Demo
+                """
+            },
+            raiseWindow: { app, marker in
+                raisedApps.append(app)
+                raisedMarkers.append(marker)
+            }
+        )
+
+        _ = try launcher.launch(
+            sessionID: "session-123",
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .raiseLaunchedWindow
+        )
+
+        XCTAssertEqual(raisedApps, [.iTerm2])
+        XCTAssertEqual(raisedMarkers, ["WhereMyOpenCode:abc"])
+    }
+
+    func testITermLauncherDoesNotRaiseWindowWithoutExplicitFocus() throws {
+        var didRaiseWindow = false
+        let launcher = ITermLauncher(
+            runAppleScript: { _ in
+                """
+                terminalWindowID=100
+                terminalSessionID=iterm-session-123
+                terminalTabTTY=/dev/ttys123
+                terminalCustomTitle=WhereMyOpenCode:abc Demo
+                """
+            },
+            raiseWindow: { _, _ in
+                didRaiseWindow = true
+            }
+        )
+
+        _ = try launcher.launch(
+            sessionID: "session-123",
+            command: "echo hi",
+            terminalTitle: "WhereMyOpenCode:abc Demo",
+            marker: "WhereMyOpenCode:abc",
+            focusPolicy: .none
+        )
+
+        XCTAssertFalse(didRaiseWindow)
     }
 }
