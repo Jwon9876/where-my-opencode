@@ -3,6 +3,18 @@ import XCTest
 @testable import Where_My_OpenCode
 
 final class MenuBarViewModelTests: TemporaryFileTestCase {
+    actor FocusRequestRecorder {
+        private var values: [[String]] = []
+
+        func append(_ request: [String]) {
+            values.append(request)
+        }
+
+        func snapshot() -> [[String]] {
+            values
+        }
+    }
+
     func testMenuBarRowActionPolicySeparatesFocusAndNewSessionCopy() {
         XCTAssertEqual(MenuBarRowActionPolicy.showOrOpenHelpText, "Show existing session or open OpenCode")
         XCTAssertEqual(MenuBarRowActionPolicy.openNewSessionHelpText, "Open new OpenCode session")
@@ -86,6 +98,126 @@ final class MenuBarViewModelTests: TemporaryFileTestCase {
 
         await viewModel.focusOrLaunch(project: project).value
 
+        XCTAssertEqual(
+            viewModel.status,
+            .info(MenuBarRowActionPolicy.showingExistingMessage(projectName: project.name))
+        )
+    }
+
+    @MainActor
+    func testMenuBarViewModelFocusOrLaunchChecksOneSessionAtATimeAndStopsOnFirstMatch() async throws {
+        let stores = try makeStores()
+        let project = Project(name: "Demo", path: "/tmp/Demo")
+        let olderSession = TrackedSession(
+            id: "session-older",
+            project: project,
+            openedAt: Date(timeIntervalSince1970: 100)
+        )
+        let latestSession = TrackedSession(
+            id: "session-latest",
+            project: project,
+            openedAt: Date(timeIntervalSince1970: 300)
+        )
+        stores.sessionStore.record(olderSession)
+        stores.sessionStore.record(latestSession)
+        let focusedRequests = FocusRequestRecorder()
+        let runningSession = RunningTerminalSession(
+            sessionID: latestSession.id,
+            marker: latestSession.marker,
+            terminalApp: .appleTerminal,
+            terminalWindowID: 42,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys042",
+            terminalCustomTitle: latestSession.terminalTitle
+        )
+        let viewModel = MenuBarViewModel(
+            settingsStore: stores.settingsStore,
+            sessionStore: stores.sessionStore,
+            focusTrackedSessions: { sessions in
+                await focusedRequests.append(sessions.map(\.id))
+                if sessions.first?.id == latestSession.id {
+                    return [runningSession]
+                }
+
+                return []
+            },
+            launchOpenCodeInTerminal: { _, _, _, _ in
+                XCTFail("Should not launch a new session when focusing an existing session succeeds.")
+                return OpenCodeLaunchResult(
+                    sessionID: "unexpected",
+                    terminalWindowID: nil,
+                    terminalSessionID: nil,
+                    terminalTabTTY: nil,
+                    terminalCustomTitle: nil,
+                    launchedAt: Date(timeIntervalSince1970: 0)
+                )
+            }
+        )
+
+        await viewModel.focusOrLaunch(project: project).value
+        let requestSnapshot = await focusedRequests.snapshot()
+
+        XCTAssertEqual(requestSnapshot, [[latestSession.id]])
+        XCTAssertEqual(
+            viewModel.status,
+            .info(MenuBarRowActionPolicy.showingExistingMessage(projectName: project.name))
+        )
+    }
+
+    @MainActor
+    func testMenuBarViewModelFocusOrLaunchFallsBackWhenLatestSessionIsStale() async throws {
+        let stores = try makeStores()
+        let project = Project(name: "Demo", path: "/tmp/Demo")
+        let olderSession = TrackedSession(
+            id: "session-older",
+            project: project,
+            openedAt: Date(timeIntervalSince1970: 100)
+        )
+        let latestSession = TrackedSession(
+            id: "session-latest",
+            project: project,
+            openedAt: Date(timeIntervalSince1970: 300)
+        )
+        stores.sessionStore.record(olderSession)
+        stores.sessionStore.record(latestSession)
+        let focusedRequests = FocusRequestRecorder()
+        let fallbackRunningSession = RunningTerminalSession(
+            sessionID: olderSession.id,
+            marker: olderSession.marker,
+            terminalApp: .appleTerminal,
+            terminalWindowID: 7,
+            terminalSessionID: nil,
+            terminalTabTTY: "/dev/ttys007",
+            terminalCustomTitle: olderSession.terminalTitle
+        )
+        let viewModel = MenuBarViewModel(
+            settingsStore: stores.settingsStore,
+            sessionStore: stores.sessionStore,
+            focusTrackedSessions: { sessions in
+                await focusedRequests.append(sessions.map(\.id))
+                if sessions.first?.id == olderSession.id {
+                    return [fallbackRunningSession]
+                }
+
+                return []
+            },
+            launchOpenCodeInTerminal: { _, _, _, _ in
+                XCTFail("Should not launch a new session when fallback focus finds an older running session.")
+                return OpenCodeLaunchResult(
+                    sessionID: "unexpected",
+                    terminalWindowID: nil,
+                    terminalSessionID: nil,
+                    terminalTabTTY: nil,
+                    terminalCustomTitle: nil,
+                    launchedAt: Date(timeIntervalSince1970: 0)
+                )
+            }
+        )
+
+        await viewModel.focusOrLaunch(project: project).value
+        let requestSnapshot = await focusedRequests.snapshot()
+
+        XCTAssertEqual(requestSnapshot, [[latestSession.id], [olderSession.id]])
         XCTAssertEqual(
             viewModel.status,
             .info(MenuBarRowActionPolicy.showingExistingMessage(projectName: project.name))

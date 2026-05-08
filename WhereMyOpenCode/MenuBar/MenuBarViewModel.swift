@@ -268,7 +268,14 @@ final class MenuBarViewModel: ObservableObject {
     private func focusProjectRunningSessions(projectPath: String) async throws -> [RunningTerminalSession] {
         let candidateSessions = sessionStore.sessions(forProjectPath: projectPath)
 
-        return try await focusTrackedSessions(candidateSessions)
+        for session in candidateSessions {
+            let focusedSessions = try await focusTrackedSessions([session])
+            if let focusedSession = focusedSessions.first {
+                return [focusedSession]
+            }
+        }
+
+        return []
     }
 
     private func upsertLiveSession(_ session: TrackedSession, launchResult: OpenCodeLaunchResult) {
