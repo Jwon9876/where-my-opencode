@@ -1,80 +1,11 @@
-import AppKit
 import SwiftUI
-
-enum RadarPalette {
-    static let signalGreen = adaptive(light: rgb(8, 122, 79), dark: rgb(46, 219, 138))
-    static let amber = adaptive(light: rgb(154, 98, 0), dark: rgb(242, 184, 75))
-    static let carbon = adaptive(light: rgb(17, 22, 20), dark: rgb(246, 250, 247))
-    static let onSignal = adaptive(light: rgb(255, 255, 255), dark: rgb(17, 22, 20))
-    static let mistSurface = adaptive(light: rgb(246, 250, 247), dark: rgb(18, 28, 24))
-    static let rowSurface = adaptive(light: rgb(255, 255, 255), dark: rgb(16, 22, 19))
-    static let line = adaptive(light: rgb(199, 216, 207), dark: rgb(58, 78, 69))
-    static let disabledText = adaptive(light: rgb(116, 132, 124), dark: rgb(104, 122, 113))
-    static let disabledSurface = adaptive(light: rgb(239, 246, 242), dark: rgb(15, 24, 20))
-
-    private static func adaptive(light: NSColor, dark: NSColor) -> Color {
-        Color(nsColor: NSColor(name: nil) { appearance in
-            if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-                dark
-            } else {
-                light
-            }
-        })
-    }
-
-    private static func rgb(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat) -> NSColor {
-        NSColor(
-            srgbRed: red / 255.0,
-            green: green / 255.0,
-            blue: blue / 255.0,
-            alpha: 1
-        )
-    }
-}
-
-enum RowSignalKind {
-    case live
-    case recent
-    case project
-
-    var accent: Color {
-        switch self {
-        case .live:
-            RadarPalette.signalGreen
-        case .recent:
-            RadarPalette.amber
-        case .project:
-            RadarPalette.signalGreen.opacity(0.64)
-        }
-    }
-
-    var railColor: Color {
-        switch self {
-        case .live, .recent:
-            accent
-        case .project:
-            RadarPalette.line
-        }
-    }
-
-    var countPrefix: String {
-        switch self {
-        case .live:
-            "LIVE"
-        case .recent:
-            "RECENT"
-        case .project:
-            "SCAN"
-        }
-    }
-}
 
 @MainActor
 struct OpenCodeRow: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPulsing = false
 
-    let signalKind: RowSignalKind
+    let signalKind: MenuBarSignalKind
     let title: String
     let subtitle: String
     let mainHelpText: String
@@ -174,7 +105,7 @@ struct OpenCodeRow: View {
 }
 
 private struct SignalNode: View {
-    let kind: RowSignalKind
+    let kind: MenuBarSignalKind
     let isPulsing: Bool
 
     var body: some View {
@@ -238,37 +169,5 @@ private struct SignalNode: View {
                     .frame(width: 4, height: 4)
             }
         }
-    }
-}
-
-struct SectionSignalLabel: View {
-    let kind: RowSignalKind
-    let value: String
-
-    var body: some View {
-        Text("\(kind.countPrefix) \(value)")
-            .font(.system(.caption, design: .monospaced, weight: .semibold))
-            .foregroundStyle(kind.accent)
-            .lineLimit(1)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background {
-                Capsule()
-                    .fill(RadarPalette.mistSurface)
-                    .overlay {
-                        Capsule()
-                            .stroke(kind.accent.opacity(0.28), lineWidth: 1)
-                    }
-            }
-    }
-}
-
-struct RadarSectionTitle: View {
-    let title: String
-
-    var body: some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(RadarPalette.carbon)
     }
 }

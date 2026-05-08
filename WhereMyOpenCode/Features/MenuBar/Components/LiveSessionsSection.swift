@@ -5,15 +5,11 @@ struct LiveSessionsSection: View {
     @ObservedObject var viewModel: MenuBarViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                RadarSectionTitle(title: "Live Sessions")
-
-                Spacer()
-
-                SectionSignalLabel(kind: .live, value: "\(viewModel.liveSessions.count)")
-            }
-
+        MenuBarSection(
+            title: "Live Sessions",
+            signalKind: .live,
+            signalValue: "\(viewModel.liveSessions.count)"
+        ) {
             if viewModel.liveSessions.isEmpty {
                 EmptyStateText("No running sessions")
             } else {

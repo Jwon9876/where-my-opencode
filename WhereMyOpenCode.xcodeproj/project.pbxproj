@@ -41,6 +41,14 @@
 		B2000000000000000000020 /* AllProjectsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000020 /* AllProjectsSection.swift */; };
 		B2000000000000000000021 /* EmptyStateText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000021 /* EmptyStateText.swift */; };
 		B2000000000000000000022 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000022 /* SettingsView.swift */; };
+		D20000000000000000000003 /* RadarPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000003 /* RadarPalette.swift */; };
+		D20000000000000000000004 /* LocatorMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000004 /* LocatorMark.swift */; };
+		D20000000000000000000005 /* LocatorButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000005 /* LocatorButtonStyle.swift */; };
+		D20000000000000000000006 /* StatusLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000006 /* StatusLine.swift */; };
+		D20000000000000000000007 /* MenuBarHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000007 /* MenuBarHeader.swift */; };
+		D20000000000000000000008 /* MenuBarFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000008 /* MenuBarFooter.swift */; };
+		D20000000000000000000009 /* MenuBarSignalKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000009 /* MenuBarSignalKind.swift */; };
+		D2000000000000000000000A /* MenuBarSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000000000000000000000A /* MenuBarSection.swift */; };
 		A10000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* Assets.xcassets */; };
 		B4000000000000000000001 /* ProjectScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3000000000000000000001 /* ProjectScannerTests.swift */; };
 		B4000000000000000000002 /* TrackedSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3000000000000000000002 /* TrackedSessionTests.swift */; };
@@ -105,6 +113,14 @@
 		B1000000000000000000020 /* AllProjectsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllProjectsSection.swift; sourceTree = "<group>"; };
 		B1000000000000000000021 /* EmptyStateText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateText.swift; sourceTree = "<group>"; };
 		B1000000000000000000022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D10000000000000000000003 /* RadarPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadarPalette.swift; sourceTree = "<group>"; };
+		D10000000000000000000004 /* LocatorMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorMark.swift; sourceTree = "<group>"; };
+		D10000000000000000000005 /* LocatorButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorButtonStyle.swift; sourceTree = "<group>"; };
+		D10000000000000000000006 /* StatusLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusLine.swift; sourceTree = "<group>"; };
+		D10000000000000000000007 /* MenuBarHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarHeader.swift; sourceTree = "<group>"; };
+		D10000000000000000000008 /* MenuBarFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarFooter.swift; sourceTree = "<group>"; };
+		D10000000000000000000009 /* MenuBarSignalKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarSignalKind.swift; sourceTree = "<group>"; };
+		D1000000000000000000000A /* MenuBarSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarSection.swift; sourceTree = "<group>"; };
 		B3000000000000000000001 /* ProjectScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectScannerTests.swift; sourceTree = "<group>"; };
 		B3000000000000000000002 /* TrackedSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedSessionTests.swift; sourceTree = "<group>"; };
 		B3000000000000000000003 /* SessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreTests.swift; sourceTree = "<group>"; };
@@ -269,6 +285,8 @@
 				B100000000000000000001A /* MenuBarViewModel.swift */,
 				B100000000000000000001B /* MenuBarStatus.swift */,
 				B100000000000000000001C /* MenuBarRowActionPolicy.swift */,
+				D10000000000000000000007 /* MenuBarHeader.swift */,
+				D10000000000000000000008 /* MenuBarFooter.swift */,
 				B7000000000000000000000C /* Components */,
 			);
 			path = MenuBar;
@@ -277,6 +295,8 @@
 		B7000000000000000000000C /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				D10000000000000000000009 /* MenuBarSignalKind.swift */,
+				D1000000000000000000000A /* MenuBarSection.swift */,
 				B100000000000000000001D /* OpenCodeRow.swift */,
 				B100000000000000000001E /* LiveSessionsSection.swift */,
 				B100000000000000000001F /* RecentSection.swift */,
@@ -296,6 +316,10 @@
 		B7000000000000000000000E /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				D10000000000000000000003 /* RadarPalette.swift */,
+				D10000000000000000000004 /* LocatorMark.swift */,
+				D10000000000000000000005 /* LocatorButtonStyle.swift */,
+				D10000000000000000000006 /* StatusLine.swift */,
 				B1000000000000000000021 /* EmptyStateText.swift */,
 			);
 			path = UI;
@@ -493,6 +517,14 @@
 				B2000000000000000000020 /* AllProjectsSection.swift in Sources */,
 				B2000000000000000000021 /* EmptyStateText.swift in Sources */,
 				B2000000000000000000022 /* SettingsView.swift in Sources */,
+				D20000000000000000000003 /* RadarPalette.swift in Sources */,
+				D20000000000000000000004 /* LocatorMark.swift in Sources */,
+				D20000000000000000000005 /* LocatorButtonStyle.swift in Sources */,
+				D20000000000000000000006 /* StatusLine.swift in Sources */,
+				D20000000000000000000007 /* MenuBarHeader.swift in Sources */,
+				D20000000000000000000008 /* MenuBarFooter.swift in Sources */,
+				D20000000000000000000009 /* MenuBarSignalKind.swift in Sources */,
+				D2000000000000000000000A /* MenuBarSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

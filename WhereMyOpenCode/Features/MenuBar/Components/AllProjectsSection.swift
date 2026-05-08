@@ -5,19 +5,21 @@ struct AllProjectsSection: View {
     @ObservedObject var viewModel: MenuBarViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                RadarSectionTitle(title: "All Projects")
-
-                Spacer()
-
-                if !viewModel.projects.isEmpty {
-                    SectionSignalLabel(kind: .project, value: "\(viewModel.visibleProjects.count)/\(viewModel.projects.count)")
-                }
-            }
-
+        MenuBarSection(
+            title: "All Projects",
+            signalKind: .project,
+            signalValue: projectCountText
+        ) {
             content
         }
+    }
+
+    private var projectCountText: String? {
+        guard !viewModel.projects.isEmpty else {
+            return nil
+        }
+
+        return "\(viewModel.visibleProjects.count)/\(viewModel.projects.count)"
     }
 
     @ViewBuilder
