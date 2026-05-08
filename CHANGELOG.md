@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 - 2026-05-08
+
+- Improves Terminal and iTerm2 window focusing reliability.
+- Fixes project clicks to focus only one matching live session before falling back to a new session.
+- Refreshes the menu bar locator UI and README preview.
+- Reorganizes app sources by responsibility and shares common storage, UI, and terminal session mapping code.
+
 ## 0.2.0 - 2026-05-07
 
 - Adds a custom Where My OpenCode menu bar icon.

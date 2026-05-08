@@ -655,7 +655,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.choejuwon.where-my-opencode";
 				PRODUCT_BUNDLE_PACKAGE_TYPE = APPL;
 				PRODUCT_NAME = "Where My OpenCode";
@@ -684,7 +684,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.choejuwon.where-my-opencode";
 				PRODUCT_BUNDLE_PACKAGE_TYPE = APPL;
 				PRODUCT_NAME = "Where My OpenCode";
