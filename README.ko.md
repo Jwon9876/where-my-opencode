@@ -16,7 +16,11 @@ OpenCode 세션을 프로젝트별로 열고, 추적하고, 다시 앞으로 가
 
 여러 프로젝트에서 OpenCode를 사용하는 사람이 필요한 세션으로 빠르게 돌아갈 수 있게 만든 가벼운 companion 앱입니다.
 
-![Where My OpenCode 메뉴 미리보기](assets/menu-preview.svg)
+<img
+  src="assets/menu-preview.png"
+  width="520"
+  alt="Where My OpenCode 메뉴 미리보기"
+/>
 
 ## 기능
 

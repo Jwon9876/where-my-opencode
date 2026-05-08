@@ -16,7 +16,11 @@ A macOS menu bar app for opening, tracking, and refocusing OpenCode sessions acr
 
 It is a lightweight companion app for people who use OpenCode across multiple projects and want a faster way to get back to the right session.
 
-![Where My OpenCode menu preview](assets/menu-preview.svg)
+<img
+  src="assets/menu-preview.png"
+  width="520"
+  alt="Where My OpenCode menu preview"
+/>
 
 ## Features
 
